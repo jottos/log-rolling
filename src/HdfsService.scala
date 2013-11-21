@@ -11,6 +11,8 @@ import java.io.FileInputStream
 import java.io.InputStream
 import org.apache.hadoop.conf._
 import org.apache.hadoop.fs._
+import org.datanucleus.store.query.AbstractQueryResultIterator
+import scala.collection.immutable.TreeMap
 
 class HdfsService {
   private val conf = new Configuration()
@@ -106,8 +108,8 @@ object runner {
     log.info("starting logRoller test, baby")
 
     val hdfsService = new HdfsService()
-    val rlist = hdfsService.getAllDirs("/user/logmaster/production")
-
+    val dlist = hdfsService.getAllDirs("/user/logmaster/production")
+    val tables = hiveTables
     /**
      * TODO
      * operations on the rlist
@@ -121,20 +123,39 @@ object runner {
     val KeyWithPartition = """.*(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2})""".r
     var keys : Set[String] = Set()
     var keyMap : Map[String, List[(_,_,_)]] = Map()
-    rlist.map(f=>f.getPath.toString).foreach(f=>
-          f match {
+    dlist.map(f=>f.getPath.toString).foreach(f=>
+      f match {
         case KeyWithPartition(cluster, key, year, month, day) => {
           val date = Tuple3(year, month, day)
           val newList = if (keyMap.contains(key)) keyMap(key) ++ List(date) else List(date)
           keyMap += key -> newList
-          keys += key
-        } //println(f"got (cluster,key)=($cluster%s,$key%s, $year%s, $month%s, $day%s)")
+          keys += key  // for debug
+        }
         case OtherLogKey(cluster, key) => println(f"got (cluster,key)=($cluster%s,$key%s)")
-        case _=> println(f"Error: Noneblown match: $f%s")
+        case _=> log.warn(f"Error: No match found for: $f%s")
     })
 
-    println(f"got keys: $keys%s")
-    println(f"got keys: $keyMap%s")
+    log.info(f"got keys: $keys%s")
+    log.info(f"got keys: $keyMap%s")
+
+    val TableNames = """.*(production|staging)_logs_([a-zA-Z\d]+).*""".r
+    var tableMap : Map[String, Set[String]] = Map()
+    hiveTables.map(f=>f("tab_name")).foreach(f=>
+      f match {
+        case TableNames(cluster, table) => {
+          val newList = if (tableMap.contains(cluster)) tableMap(cluster) ++ Set(table) else Set(table)
+          tableMap += cluster -> newList
+        }
+        case _=> log.warn(f"got hive table that doesn't match: $f%s")
+    })
+    println(f"got tables: $tableMap%s")
+  }
+
+  // TODO jos, we need to put this typedef into a package that is shared
+  type QueryIterator = Iterator[Map[String,Any]]
+  def hiveTables : QueryIterator = {
+    val hc = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
+    hc.fetch("show tables")
   }
 
   def hiveTest = {

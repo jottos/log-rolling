@@ -8,17 +8,17 @@
 class Logger(source: String) {
   def error(e : String)
   {
-    Console.err.println(f"$source%s: $e%s")
+    Console.err.println(f"$source%s: [ERROR] $e%s")
     Console.err.flush()
   }
   def warn(e: String)
   {
-    Console.out.println(f"$source%s: $e%s")
+    Console.out.println(f"$source%s: [WARN] $e%s")
     Console.out.flush()
   }
   def info(e: String)
   {
-    Console.out.println(f"$source%s: $e%s")
+    Console.out.println(f"$source%s: [INFO] $e%s")
     Console.out.flush()
   }
 }

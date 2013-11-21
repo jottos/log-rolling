@@ -12,8 +12,10 @@ import scala.collection.immutable.TreeMap
  * Date: 10/9/13
  * Time: 10:09 AM
  */
+
 class HiveConnection(jdbcUrl:String, username:String, password:String, driverName:String = "org.apache.hive.jdbc.HiveDriver") {
   Class.forName(driverName)
+  type QueryIterator = Iterator[Map[String,Any]]
 
   def fetch(query:String) = {
     // setup our connections, statements and results object.
@@ -23,7 +25,8 @@ class HiveConnection(jdbcUrl:String, username:String, password:String, driverNam
 
     // construct an inline iterator that lets us run through a result set and once
     // we are all done, releases any used resources like connections and statements
-    new Iterator[Map[String,AnyRef]] {
+    //new Iterator[Map[String,AnyRef]] {
+    new QueryIterator {
 
       def hasNext: Boolean = {
         if(!results.next()) {
