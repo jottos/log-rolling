@@ -1,4 +1,4 @@
-//package com.apixio.utils
+package com.apixio.utils
 
 import java.sql.DriverManager
 import scala.collection.immutable.TreeMap

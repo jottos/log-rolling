@@ -13,6 +13,7 @@ import java.sql.SQLException
 import org.apache.hadoop.conf._
 import org.apache.hadoop.fs._
 import scala.collection.mutable.ArrayBuffer
+import com.apixio.utils.HiveConnection
 
 class HdfsService {
   private val conf = new Configuration()
@@ -104,28 +105,19 @@ class HdfsService {
 
 object runner {
   val log = new Logger(this.getClass.getSimpleName)
+  type TableMap = Map[String, Set[String]]
+  type KeyMap = Map[String, List[Tuple3[Int,Int,Int]]]
+  // TODO jos, we need to put this typedef into a package that is shared
+  type QueryIterator = Iterator[Map[String,Any]]
+
   def main(value: Array[String]) = {
 
     log.info("starting logRoller test, baby")
 
-    val cte1 =checkTableExists("production_logs_parserjob_24")
-    val cte2 = checkTableExists("production_logs_parserjob_21")
-    println(f"checkTableExits true:$cte1%b, false:$cte2%b")
-
-    val partitions = getTablePartitions("production_logs_parserjob_epoch")
-    println("got partion len:" + partitions.length)
-    partitions.foreach(println(_))
-
-    if (createTable("jos_logs_test_table"))
-        println("create and check work")
-    else
-      println("create table :(")
-
-    exit()
+    // tests
+    //runTests
 
     val hdfsService = new HdfsService()
-    val dlist = hdfsService.getAllDirs("/user/logmaster/production")
-    val tables = hiveTables
     /**
      * TODO
      * operations on the rlist
@@ -135,27 +127,25 @@ object runner {
      * 4) create diff list that needs to generate new tables and new partitions
      * pretty much done at this point :)
      */
+    val dirList = hdfsService.getAllDirs("/user/logmaster/production")
     val OtherLogKey = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
     val KeyWithPartition = """.*(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2})""".r
-    var keys : Set[String] = Set()
-    var keyMap : Map[String, List[(_,_,_)]] = Map()
-    dlist.map(f=>f.getPath.toString).foreach(f=>
+    var keyMap : KeyMap = Map()
+    dirList.map(f=>f.getPath.toString).foreach(f=>
       f match {
         case KeyWithPartition(cluster, key, year, month, day) => {
-          val date = Tuple3(year, month, day)
+          val date = Tuple3(year.toInt, month.toInt, day.toInt)
           val newList = if (keyMap.contains(key)) keyMap(key) ++ List(date) else List(date)
           keyMap += key -> newList
-          keys += key  // for debug
         }
-        case OtherLogKey(cluster, key) => println(f"got (cluster,key)=($cluster%s,$key%s)")
+        case OtherLogKey(cluster, key) => log.info(f"got (cluster,key)=($cluster%s,$key%s)")
         case _=> log.warn(f"Error: No match found for: $f%s")
     })
 
-    log.info(f"got keys: $keys%s")
     log.info(f"got keys: $keyMap%s")
 
     val TableNames = """.*(production|staging)_logs_([a-zA-Z\d]+).*""".r
-    var tableMap : Map[String, Set[String]] = Map()
+    var tableMap : TableMap = Map()
     hiveTables.map(f=>f("tab_name")).foreach(f=>
       f match {
         case TableNames(cluster, table) => {
@@ -167,10 +157,32 @@ object runner {
     println(f"got tables: $tableMap%s")
   }
 
-  // TODO jos, we need to put this typedef into a package that is shared
-  type QueryIterator = Iterator[Map[String,Any]]
+  /**
+   * checkForAllTables - given a list of keys for which we expect that there should be matching tables in hive, check
+   * the assertion that the tables exist in Hive and for those that do not, return a list of hive tables (tableNames)
+   * that should be created
+   * @param keyMap
+   * @param tableMap
+   * @return
+   */
+  def checkForAllTables(keyMap: KeyMap, tableMap: TableMap) : Array[String] = {
+    Array()
+  }
 
-  var hiveConn : HiveConnection = null
+  /**
+   * checkForAllPartitions - given a keymap check that all required partitions specified in map do indeed exist
+   * return another keymap representing any missing partitions
+   * @param keyMap
+   * @return
+
+  def checkForAllPartitions(keyMap: KeyMap) : KeyMap = {
+
+  }
+
+ /**
+   * hiveConnection - create and maintain access for the application HiveConnection
+   */
+  private var hiveConn : HiveConnection = null
   def hiveConnection : HiveConnection = {
     if (hiveConn != null)
       hiveConn
@@ -181,6 +193,11 @@ object runner {
   }
 
 
+  /**
+   * createTable - create a partitioned table with the given name
+   * @param tableName
+   * @return
+   */
   def createTable(tableName: String) : Boolean = {
     try {
       hiveConnection.execute(f"create external table if not exists $tableName like logging_master_schema_do_not_remove")
@@ -191,13 +208,22 @@ object runner {
     }
   }
 
-
+  /**
+   * hiveTables - get a list of tables available in hive
+   * @return QueryIterator to table list - drain this into a local structure, you cannot iterate through it more than once
+   */
   def hiveTables : QueryIterator = {
     hiveConnection.fetch("show tables")
   }
 
-  val PartitionTableExtractor = """month=(\d{2})\/week=(\d{2})\/day=(\d{2})""".r
+
+  private val PartitionTableExtractor = """month=(\d{2})\/week=(\d{2})\/day=(\d{2})""".r
   type PartitionList = ArrayBuffer[Tuple3[Int,Int,Int]]
+  /**
+   * getTablePartitions - return a PartitionList for the table provided
+   * @param tableName
+   * @return
+   */
   def getTablePartitions(tableName: String) : PartitionList = {
     var partitions : PartitionList = ArrayBuffer()
     try {
@@ -231,6 +257,55 @@ object runner {
         return false
       }
     }
+  }
+
+
+  /**
+   * createPartition - create a new partition directory for tableName
+   * @param tableName
+   * @param location
+   * @param month
+   * @param week
+   * @param day
+   * @return
+   */
+  def createPartition(tableName: String, location: String, month: Int, week: Int, day: Int) : Boolean = {
+    hiveConnection.execute(f"alter table $tableName%s add if not exists partition (month='$month%s', week='$week%s', day='$day%s') location '$location%s'")
+    true // returning true, because hive jdbc seems to always return false
+  }
+
+  /**
+   * dropPartition - drop a directory partition from table
+   * @param tableName
+   * @param month
+   * @param week
+   * @param day
+   * @return
+   */
+  def dropPartition(tableName: String, month: Int, week: Int, day: Int) : Boolean = {
+    hiveConnection.execute(f"alter table $tableName%s drop if exists partition (month='$month%s', week='$week%s', day='$day%s')")
+    true // returning true, because hive jdbc seems to always return false
+  }
+
+  /**
+   * TEST FUNCTIONS
+   */
+  def runTests = {
+    log.info("RUNNING TESTS")
+    val cte1 =checkTableExists("production_logs_parserjob_24")
+    val cte2 = checkTableExists("production_logs_parserjob_21")
+    log.info(f"checkTableExits true:$cte1%b, false:$cte2%b")
+
+    val partitions = getTablePartitions("production_logs_parserjob_epoch")
+    log.info("got partion len:" + partitions.length)
+    partitions.foreach(println(_))
+
+    if (createTable("jos_logs_test_table"))
+      log.info("create and check work properly")
+    else
+      println("create table :(")
+
+    exit()
   }
 
   def hiveTest = {
