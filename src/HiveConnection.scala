@@ -16,6 +16,12 @@ import scala.collection.immutable.TreeMap
 class HiveConnection(jdbcUrl:String, username:String, password:String, driverName:String = "org.apache.hive.jdbc.HiveDriver") {
   Class.forName(driverName)
   type QueryIterator = Iterator[Map[String,Any]]
+  private val con = DriverManager.getConnection(jdbcUrl,username,password)
+
+  def execute(query:String) : Boolean = {
+    val stmt = con.createStatement()
+    stmt.execute(query)
+  }
 
   def fetch(query:String) = {
     // setup our connections, statements and results object.

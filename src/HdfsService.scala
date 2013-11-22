@@ -9,10 +9,10 @@ import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import java.sql.SQLException
 import org.apache.hadoop.conf._
 import org.apache.hadoop.fs._
-import org.datanucleus.store.query.AbstractQueryResultIterator
-import scala.collection.immutable.TreeMap
+import scala.collection.mutable.ArrayBuffer
 
 class HdfsService {
   private val conf = new Configuration()
@@ -103,9 +103,25 @@ class HdfsService {
 
 
 object runner {
+  val log = new Logger(this.getClass.getSimpleName)
   def main(value: Array[String]) = {
-    val log = new Logger(this.getClass.getSimpleName)
+
     log.info("starting logRoller test, baby")
+
+    val cte1 =checkTableExists("production_logs_parserjob_24")
+    val cte2 = checkTableExists("production_logs_parserjob_21")
+    println(f"checkTableExits true:$cte1%b, false:$cte2%b")
+
+    val partitions = getTablePartitions("production_logs_parserjob_epoch")
+    println("got partion len:" + partitions.length)
+    partitions.foreach(println(_))
+
+    if (createTable("jos_logs_test_table"))
+        println("create and check work")
+    else
+      println("create table :(")
+
+    exit()
 
     val hdfsService = new HdfsService()
     val dlist = hdfsService.getAllDirs("/user/logmaster/production")
@@ -153,9 +169,68 @@ object runner {
 
   // TODO jos, we need to put this typedef into a package that is shared
   type QueryIterator = Iterator[Map[String,Any]]
+
+  var hiveConn : HiveConnection = null
+  def hiveConnection : HiveConnection = {
+    if (hiveConn != null)
+      hiveConn
+    else {
+      hiveConn = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
+      hiveConn
+    }
+  }
+
+
+  def createTable(tableName: String) : Boolean = {
+    try {
+      hiveConnection.execute(f"create external table if not exists $tableName like logging_master_schema_do_not_remove")
+      checkTableExists(tableName)
+    } catch {
+      case ex: Exception => log.error(f"createTable: crashed out with $ex%s")
+      return false
+    }
+  }
+
+
   def hiveTables : QueryIterator = {
-    val hc = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
-    hc.fetch("show tables")
+    hiveConnection.fetch("show tables")
+  }
+
+  val PartitionTableExtractor = """month=(\d{2})\/week=(\d{2})\/day=(\d{2})""".r
+  type PartitionList = ArrayBuffer[Tuple3[Int,Int,Int]]
+  def getTablePartitions(tableName: String) : PartitionList = {
+    var partitions : PartitionList = ArrayBuffer()
+    try {
+      val partitionInfo = hiveConnection.fetch(f"show partitions $tableName%s")
+      partitionInfo.foreach(f=>{
+        f("partition") match {
+          case PartitionTableExtractor(month, week, day) => {
+            val t = Tuple3(month.toInt, week.toInt, day.toInt)
+            partitions += Tuple3(month.toInt, week.toInt, day.toInt)
+          }
+          case _=> log.warn(f"getTablePartitions got crap $f%s")
+        }
+      })
+    } catch {
+      case ex: Exception => {
+        log.error(f"getTablePartitions: failed getting partitions for $tableName%s")
+      }
+    }
+    partitions
+  }
+
+  def checkTableExists(tableName: String) : Boolean = {
+    try {
+      val tableInfo = hiveConnection.fetch(f"describe formatted $tableName%s")
+      // TODO look for col_name == Table Type with value EXTERNAL_TABLE
+      return true
+    } catch {
+      case ex: SQLException => return false
+      case ex: Exception => {
+        log.error(f"checkHiveTable: received unexpected exception $ex%s")
+        return false
+      }
+    }
   }
 
   def hiveTest = {
@@ -201,5 +276,4 @@ object runner {
     println(f"quick test $d1%s, $d2%s, $d3%s, $d4%s, $d5%s)")
   }
 }
-
 

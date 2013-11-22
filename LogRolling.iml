@@ -4,7 +4,7 @@
     <facet type="scala" name="Scala">
       <configuration>
         <option name="compilerLibraryLevel" value="Project" />
-        <option name="compilerLibraryName" value="scala-compiler" />
+        <option name="compilerLibraryName" value="scala-lib" />
         <option name="explainTypeErrors" value="true" />
       </configuration>
     </facet>
@@ -16,22 +16,31 @@
     </content>
     <orderEntry type="jdk" jdkName="1.7" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-library" level="project" />
-    <orderEntry type="library" name="hadoop-core-1.2.1" level="project" />
-    <orderEntry type="library" name="commons-logging-1.1.1" level="project" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="file://$MODULE_DIR$/../../hadoop/hive-jdbc-0.10.0" />
+          <root url="file://$MODULE_DIR$/../hadoop/hive-jdbc-0.10.0" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="file://$MODULE_DIR$/../../hadoop/hive-jdbc-0.10.0" />
+          <root url="file://$MODULE_DIR$/../hadoop/hive-jdbc-0.10.0" />
         </SOURCES>
-        <jarDirectory url="file://$MODULE_DIR$/../../hadoop/hive-jdbc-0.10.0" recursive="false" />
-        <jarDirectory url="file://$MODULE_DIR$/../../hadoop/hive-jdbc-0.10.0" recursive="false" type="SOURCES" />
+        <jarDirectory url="file://$MODULE_DIR$/../hadoop/hive-jdbc-0.10.0" recursive="false" />
+        <jarDirectory url="file://$MODULE_DIR$/../hadoop/hive-jdbc-0.10.0" recursive="false" type="SOURCES" />
       </library>
     </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/../hadoop/hadoop-1.2.1" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://$MODULE_DIR$/../hadoop/hadoop-1.2.1" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="scala-lib" level="project" />
+    <orderEntry type="library" name="scala-compiler" level="project" />
   </component>
 </module>
 
