@@ -96,6 +96,7 @@ object HDFSFileService {
 
 
 
+
 println("Hadoop FS test")
 //HDFSFileService.showConf()
 //HDFSFileService.ls("hdfs://54.215.109.178:8020/tmp")
@@ -106,7 +107,84 @@ val rlist = HDFSFileService.recursiveDirectoryOnly("/tmp/apxqueue")
 
 
 
+
+
+
+
+
 rlist.foreach(f=>println(f.getPath))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

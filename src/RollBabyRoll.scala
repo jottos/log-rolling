@@ -110,6 +110,7 @@ object runner {
       })
       neededPartitionsMap(kvp._1) = neededPartitions
     })
+    neededPartitionsMap
   }
 
   type DateTuple = Tuple3[Int, Int, Int]
@@ -117,7 +118,10 @@ object runner {
   def date2partitionTuple(date: DateTuple): PartitionTuple = {
     val format = "yyyyMMdd"
     val formatter: java.text.SimpleDateFormat = new java.text.SimpleDateFormat(format)
-    val jdate = formatter.parse(f"20$date._1%s$date._2%s$date._3%s")
+    val year = date._1
+    val month = date._2
+    val day = date._3
+    val jdate = formatter.parse(f"20$year%s$month%s$day%s")
     val calendar: java.util.Calendar = java.util.Calendar.getInstance()
 
     calendar.setTime(jdate)
