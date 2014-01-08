@@ -23,7 +23,13 @@ object runner {
 
     log.info("Roll Baby Roll..")
 
-    // tests
+    //log.info("running tests...")
+    //runTests
+    //patternMatchingTest
+    //hiveTest
+    hdfsTest
+    exit(1)
+    //log.info("tests done, bye")
     //runTests
 
     val hdfsService = new HdfsService()
@@ -52,14 +58,16 @@ object runner {
               bigKeyMap(cluster)
             }
           keyMap(key) = if (keyMap.contains(key)) keyMap(key) ++= List(date) else MutableList(date)
-
+          //log.info(f"adding partition $year%d, $month%d, $day%d for key $key%s")
+          log.info(f"adding partition $date%s for key $key%s")
         }
         case OtherLogKey(cluster, key) => log.info(f"got (cluster,key)=($cluster%s,$key%s)")
         case _=> log.warn(f"Error: No match found for: $f%s")
-    })
-
+      })
+    log.info("")
+    log.info("finished dirList.map")
     log.info(f"got keys: $bigKeyMap%s")
-
+    log.info("fetching table map")
     val TableNames = """.*(production|staging)_logs_([a-zA-Z\d]+).*""".r
     var tableMap : TableMap = Map()
     hiveTables.foreach(f=>
@@ -70,7 +78,7 @@ object runner {
         }
         case _=> log.warn(f"got hive table that doesn't match: $f%s")
     })
-    println(f"got tables: $tableMap%s")
+    log.info(f"got tables: $tableMap%s")
   }
 
   /**
@@ -259,11 +267,15 @@ object runner {
   }
 
   def hiveTest = {
-    println("starting hive jdbc tests")
+    val log = new Logger(this.getClass.getSimpleName)
+    log.info("starting hive jdbc tests")
     val hc = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
+
+    log.info("simple: show tables")
     val tableList = hc.fetch("show tables")
     tableList.foreach(println(_))
 
+    log.info("complex: select get_json_object(line, '$.status'...")
     val complexQuery = """select  get_json_object(line, '$.status') as parser_status,
                                   get_json_object(line, '$.jobname') as jobname,
                                   count(1) as success_count
@@ -271,16 +283,15 @@ object runner {
                           where week = 40 and get_json_object(line, '$.level') = 'EVENT' group by get_json_object(line, '$.jobname'), get_json_object(line, '$.status')"""
     val complexAnswer = hc.fetch(complexQuery)
     complexAnswer.foreach(println(_))
-
-    val log = new Logger(this.getClass.getSimpleName)
-
+    log.info("hive Test finsished")
     //
     // from old hive protocol v1 (needs .8 drivers attached to project
     //val hc = new HiveConnectionExperiment("184.169.129.122", 10001)
   }
 
-  def patterMatchingTest = {
-    println("Hadoop FS test")
+  def patternMatchingTest = {
+    val log = new Logger(this.getClass.getSimpleName)
+    log.info("pattern matching test")
 
     val LogKey = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
     val k1     = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
@@ -299,6 +310,26 @@ object runner {
     val k2(d1,d2,d3,d4,d5) =
       "hdfs://54.215.109.178:8020/user/logmaster/staging/seqfilecreator/2013-11-12"
     println(f"quick test $d1%s, $d2%s, $d3%s, $d4%s, $d5%s)")
+  log.info("pattern matching test finished")
+  }
+
+  def hdfsTest = {
+    val log = new Logger(this.getClass.getSimpleName)
+    log.info("hdfsTest")
+
+    log.info("recursive list of just the dirs")
+    val hdfsService = new HdfsService()
+    val dirs = hdfsService.getAllDirs("/tmp/apxqueue")
+    dirs.foreach(f=>println(f.getPath))
+
+    hdfsService.ls("/user").foreach(f=>println(f.getPath))
+
+    val prodDirs = hdfsService.ls("/user/logmaster/production")
+    val stageDirs = hdfsService.ls("/user/logmaster/staging")
+    val allDirs = prodDirs ++ stageDirs
+    log.info("to lists of dirs")
+    allDirs.foreach(f=>println(f.getPath))
+    log.info("hdfs test finished")
   }
 }
 
