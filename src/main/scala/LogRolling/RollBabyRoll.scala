@@ -24,19 +24,10 @@ object runner {
   type QueryIterator = Iterator[Map[String,Any]]
 
   def main(value: Array[String]) = {
+    val hdfsService = new HdfsService()
 
     log.info("Roll Baby Roll..")
 
-    //log.info("running tests...")
-    //runTests
-    //patternMatchingTest
-    //hiveTest
-    //hdfsTest
-    //exit(1)
-    //log.info("tests done, bye")
-    //runTests
-
-    val hdfsService = new HdfsService()
     /**
      * TODO
      * operations on the rlist
@@ -304,48 +295,6 @@ def getLines(filePath : String) = fromFile(filePath).getLines()
     //val hc = new HiveConnectionExperiment("184.169.129.122", 10001)
   }
 
-  def patternMatchingTest = {
-    val log = new Logger(this.getClass.getSimpleName)
-    log.info("pattern matching test")
 
-    val LogKey = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
-    val k1     = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
-    val k2     = """.*(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2})""".r
-    println("Try two")
-
-    val k1(b1,b2) =
-      "hdfs://54.215.109.178:8020/user/logmaster/staging/seqfilecreator/2013-11-12"
-    println(f"quick test $b1%s, $b2%s")
-
-    println("Try two")
-    val LogKey(c1,c2) = "hdfs://54.215.109.178:8020/user/logmaster/staging/seqfilecreator"
-    println(f"quick test $c1%s, $c2%s")
-
-    println("Try three")
-    val k2(d1,d2,d3,d4,d5) =
-      "hdfs://54.215.109.178:8020/user/logmaster/staging/seqfilecreator/2013-11-12"
-    println(f"quick test $d1%s, $d2%s, $d3%s, $d4%s, $d5%s)")
-  log.info("pattern matching test finished")
-  }
-
-  def hdfsTest = {
-    val log = new Logger(this.getClass.getSimpleName)
-    log.info("hdfsTest")
-
-    log.info("recursive list of just the dirs")
-    val hdfsService = new HdfsService()
-    val dirs = hdfsService.getAllDirs("/tmp/apxqueue/docreceiver-lance")
-    dirs.foreach(f=>println(f.getPath))
-
-    log.info("regular ls")
-    hdfsService.ls("/user").foreach(f=>println(f.getPath))
-
-    log.info("two ls commands concatenated")
-    val prodDirs = hdfsService.ls("/user/logmaster/production")
-    val stageDirs = hdfsService.ls("/user/logmaster/staging")
-    val allDirs = prodDirs ++ stageDirs
-    allDirs.foreach(f=>println(f.getPath))
-    log.info("hdfs test finished")
-  }
 }
 
