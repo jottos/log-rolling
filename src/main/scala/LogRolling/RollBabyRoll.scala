@@ -75,6 +75,11 @@ object runner {
     log.info(f"got knownTables: $tableMap%s")
 
     log.info("checking for tables")
+    val missingProductionTables = checkForAllTables(bigKeyMap("production"), tableMap("production"))
+    val missingPartitions = checkForAllPartitions(bigKeyMap("production"))
+
+    log.info(f"missing tables $missingProductionTables%s")
+    log.info(f"missing partitions $missingPartitions")
     //val missingTables = checkForAllTables(bigKeyMap("production"), hiveTables("production"))
   }
 
@@ -177,7 +182,7 @@ def getLines(filePath : String) = fromFile(filePath).getLines()
    * @return QueryIterator to table list - drain this into a local structure, you cannot iterate through it more than once
    */
   def hiveTables: List[String] = {
-    hiveConnection.fetch("show knownTables").map(f=>f("tab_name").toString).toList
+    hiveConnection.fetch("show tables").map(f=>f("tab_name").toString).toList
   }
 
 
@@ -271,30 +276,5 @@ def getLines(filePath : String) = fromFile(filePath).getLines()
 
     exit()
   }
-
-  def hiveTest = {
-    val log = new Logger(this.getClass.getSimpleName)
-    log.info("starting hive jdbc tests")
-    val hc = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
-
-    log.info("simple: show knownTables")
-    val tableList = hc.fetch("show tables")
-    tableList.foreach(println(_))
-
-    log.info("complex: select get_json_object(line, '$.status'...")
-    val complexQuery = """select  get_json_object(line, '$.status') as parser_status,
-                                  get_json_object(line, '$.jobname') as jobname,
-                                  count(1) as success_count
-                          from staging_logs_persistjob_epoch
-                          where week = 40 and get_json_object(line, '$.level') = 'EVENT' group by get_json_object(line, '$.jobname'), get_json_object(line, '$.status')"""
-    val complexAnswer = hc.fetch(complexQuery)
-    complexAnswer.foreach(println(_))
-    log.info("hive Test finsished")
-    //
-    // from old hive protocol v1 (needs .8 drivers attached to project
-    //val hc = new HiveConnectionExperiment("184.169.129.122", 10001)
-  }
-
-
 }
 

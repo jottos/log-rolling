@@ -32,7 +32,7 @@ class LogRollingPrimitivesTest extends FlatSpec with ShouldMatchers {
     complexAnswer.size should be > 0
   }
 
-  it should "be able to fail" in { 0 should be (1)}
+  //it should "be able to fail" in { 0 should be (1)}
 
 // jos put these in a hive primitives class and then update this test
 /*

@@ -1,5 +1,5 @@
 out
-# need this .idea
+# need this now that we are using Maven - .idea
 \#*
 \#*#
 *~
