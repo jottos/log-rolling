@@ -13,45 +13,12 @@ import com.apixio.utils.HiveConnection
  */
 class LogRollingPrimitivesTest extends FlatSpec with ShouldMatchers {
   val hdfsService = new HdfsService()
-  val hc = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
-
-  "hiveConnection" should "be able to show tables" in {
-    val hc = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
-    val tableList = hc.fetch("show tables")
-    tableList.size should be > 0
-  }
-
-  it should "be able to perform a complex query" in {
-    val complexQuery = """select  get_json_object(line, '$.status') as parser_status,
-                                  get_json_object(line, '$.jobname') as jobname,
-                                  count(1) as success_count
-                          from staging_logs_persistjob_epoch
-                          where week = 40 and get_json_object(line, '$.level') = 'EVENT' group by get_json_object(line, '$.jobname'), get_json_object(line, '$.status')"""
-    val complexAnswer = hc.fetch(complexQuery)
-
-    complexAnswer.size should be > 0
-  }
 
   //it should "be able to fail" in { 0 should be (1)}
 
 // jos put these in a hive primitives class and then update this test
-/*
-  it should "be able to determine if a table exists" in {
-    // table exists
-    val cte1 = checkTableExists("production_logs_parserjob_24")
-    // table does not exist
-    val cte2 = checkTableExists("production_logs_parserjob_21")
 
-    cte1 should be (true)
-    cte2 should be (false)
-  }
 
-  it should "be able to get a list of partitions belonging to a log table" in {
-    val partitions = getTablePartitions("production_logs_parserjob_epoch")
-    partitions.length should be > 0
-  }
-*/
-  // jos put this in separate class
 // class LogRollingPatternMatchTests
   "hdfsService" should "be able to ls /user/logmaster" in {
     val dirs = hdfsService.ls("/tmp")

@@ -2,11 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5ea64f3f-b979-4851-b3b8-b112529ee960" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/LogRolling.iml" afterPath="$PROJECT_DIR$/LogRolling.iml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/scala/LogRolling/LogDbOperations.scala" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/test/scala/LogRolling/LogDbOperationsTest.scala" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/scala/LogRolling/LogRollingModel.scala" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_scala_lang_scala_compiler_bundle_2_10_12.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_scala_lang_scala_compiler_bundle_2_6_1.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/scala/LogRolling/RollBabyRoll.scala" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/LogRolling/LogRollingPrimitivesTest.scala" afterPath="$PROJECT_DIR$/src/test/scala/LogRolling/LogRollingPrimitivesTest.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/LogRolling/Logger.scala" afterPath="$PROJECT_DIR$/src/main/scala/LogRolling/Logger.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/LogRolling/RollBabyRoll.scala" afterPath="$PROJECT_DIR$/src/main/scala/LogRolling/RollBabyRoll.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="LogRolling.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -15,8 +19,12 @@
     <file path="/pom.xml" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389238068597" ignored="false" />
     <file path="/LogRollingPrimitivesTest.scala" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389237587045" ignored="false" />
     <file path="/HdfsService.scala" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389237125803" ignored="false" />
-    <file path="/Dummy.txt" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389290106433" ignored="false" />
-    <file path="/Logger.scala" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389295189158" ignored="false" />
+    <file path="/Dummy.txt" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389403312405" ignored="false" />
+    <file path="/Logger.scala" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389404220121" ignored="false" />
+    <file path="/LogDbOperations.scala" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389427033693" ignored="false" />
+    <file path="/LogRollingModel.scala" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389405583534" ignored="false" />
+    <file path="/LogDbOperationsTest.scala" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389409069038" ignored="false" />
+    <file path="/fragment.java" changelist="5ea64f3f-b979-4851-b3b8-b112529ee960" time="1389424587458" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,6 +76,23 @@
         <option name="LOG_MESSAGE" value="" />
       </breakpoint>
     </breakpoint_any>
+    <line_breakpoints>
+      <breakpoint url="file://$PROJECT_DIR$/src/main/scala/LogRolling/LogDbOperations.scala" line="132" class="com.apixio.service.LogRoller.LogDbOperations" package="com.apixio.service.LogRoller">
+        <option name="ENABLED" value="true" />
+        <option name="LOG_ENABLED" value="false" />
+        <option name="LOG_EXPRESSION_ENABLED" value="false" />
+        <option name="REMOVE_AFTER_HIT" value="false" />
+        <option name="SUSPEND_POLICY" value="SuspendAll" />
+        <option name="SUSPEND" value="true" />
+        <option name="COUNT_FILTER_ENABLED" value="false" />
+        <option name="COUNT_FILTER" value="0" />
+        <option name="CONDITION_ENABLED" value="true" />
+        <option name="CLASS_FILTERS_ENABLED" value="false" />
+        <option name="INSTANCE_FILTERS_ENABLED" value="false" />
+        <option name="CONDITION" value="" />
+        <option name="LOG_MESSAGE" value="" />
+      </breakpoint>
+    </line_breakpoints>
     <breakpoint_rules />
     <ui_properties />
   </component>
@@ -77,11 +102,37 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="RollBabyRoll.scala" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/RollBabyRoll.scala">
+      <file leaf-file-name="LogRollingModel.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/LogRollingModel.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="78" column="50" selection-start="3051" selection-end="3051" vertical-scroll-proportion="0.17794971">
-              <folding />
+            <state line="79" column="0" selection-start="2948" selection-end="2948" vertical-scroll-proportion="0.0">
+              <folding>
+                <element signature="e#126#164#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="LogDbOperationsTest.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/test/scala/LogRolling/LogDbOperationsTest.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="49" column="52" selection-start="1876" selection-end="1876" vertical-scroll-proportion="0.0">
+              <folding>
+                <element signature="n#!!doc" expanded="true" />
+                <element signature="e#189#211#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="LogDbOperations.scala" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/LogDbOperations.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="54" column="33" selection-start="1827" selection-end="1885" vertical-scroll-proportion="0.7278481">
+              <folding>
+                <element signature="n#!!doc" expanded="true" />
+                <element signature="e#190#253#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -89,7 +140,7 @@
       <file leaf-file-name="Logger.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/Logger.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="16" column="68" selection-start="386" selection-end="386" vertical-scroll-proportion="0.0">
+            <state line="14" column="0" selection-start="282" selection-end="282" vertical-scroll-proportion="0.0">
               <folding>
                 <element signature="e#189#222#0" expanded="true" />
               </folding>
@@ -118,10 +169,9 @@
       <file leaf-file-name="LogRollingPrimitivesTest.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/test/scala/LogRolling/LogRollingPrimitivesTest.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="34" column="4" selection-start="1282" selection-end="1282" vertical-scroll-proportion="0.0">
+            <state line="20" column="0" selection-start="487" selection-end="487" vertical-scroll-proportion="0.0">
               <folding>
                 <element signature="e#38#60#0" expanded="true" />
-                <marker date="1389293343000" expanded="true" signature="3363:3462" placeholder="{...}" />
               </folding>
             </state>
           </provider>
@@ -130,7 +180,7 @@
       <file leaf-file-name="pom.xml" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pom.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="58" column="25" selection-start="2097" selection-end="2097" vertical-scroll-proportion="0.0">
+            <state line="44" column="51" selection-start="1607" selection-end="1607" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -157,9 +207,13 @@
       <list>
         <option value="$PROJECT_DIR$/src/main/scala/LogRolling/HdfsService.scala" />
         <option value="$PROJECT_DIR$/pom.xml" />
-        <option value="$PROJECT_DIR$/src/test/scala/LogRolling/LogRollingPrimitivesTest.scala" />
         <option value="$PROJECT_DIR$/src/main/scala/LogRolling/Logger.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/LogRolling/LoggingOperations.scala" />
         <option value="$PROJECT_DIR$/src/main/scala/LogRolling/RollBabyRoll.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/LogRolling/LogRollingModel.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/LogRolling/LogRollingPrimitivesTest.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/LogRolling/LogDbOperationsTest.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/LogRolling/LogDbOperations.scala" />
       </list>
     </option>
   </component>
@@ -213,8 +267,8 @@
     </treeState>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="width" value="1920" />
-    <option name="height" value="1080" />
+    <option name="width" value="1440" />
+    <option name="height" value="900" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
@@ -227,7 +281,7 @@
     <ConfirmationsSetting value="0" id="Remove" />
   </component>
   <component name="ProjectReloadState">
-    <option name="STATE" value="2" />
+    <option name="STATE" value="0" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1" splitterProportion="0.5">
@@ -242,7 +296,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
       <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
@@ -290,6 +343,32 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
+              <option name="myItemId" value="test" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="scala" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="LogRolling" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="LogRolling" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="log-rolling" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
               <option name="myItemId" value="main" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
@@ -304,6 +383,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -318,11 +398,49 @@
     <property name="MemberChooser.showClasses" value="true" />
     <property name="FullScreen" value="true" />
     <property name="GoToClass.includeLibraries" value="false" />
+    <property name="dynamic.classpath" value="false" />
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
-    <property name="dynamic.classpath" value="false" />
   </component>
-  <component name="RunManager" selected="Application.runner">
+  <component name="RunManager" selected="Application.logRoller">
+    <configuration default="false" name="logRoller" type="Application" factoryName="Application" temporary="true">
+      <option name="MAIN_CLASS_NAME" value="com.apixio.service.LogRoller.logRoller" />
+      <option name="VM_PARAMETERS" value="" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="LogRolling" />
+      <envs />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="All in LogRolling" type="JUnit" factoryName="JUnit" temporary="true">
+      <module name="LogRolling" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="METHOD_NAME" />
+      <option name="TEST_OBJECT" value="package" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
     <configuration default="false" name="LogRollingPrimitivesTest" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
       <module name="LogRolling" />
       <setting name="path" value="com.apixio.service.LogRoller.LogRollingPrimitivesTest" />
@@ -338,18 +456,17 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="runner" type="Application" factoryName="Application" temporary="true">
-      <option name="MAIN_CLASS_NAME" value="com.apixio.service.LogRoller.runner" />
-      <option name="VM_PARAMETERS" />
-      <option name="PROGRAM_PARAMETERS" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="ENABLE_SWING_INSPECTOR" value="false" />
-      <option name="ENV_VARIABLES" />
-      <option name="PASS_PARENT_ENVS" value="true" />
+    <configuration default="false" name="ScalaTests in 'LogRolling'" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
       <module name="LogRolling" />
-      <envs />
+      <setting name="path" value="" />
+      <setting name="package" value="LogRolling" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <setting name="searchForTest" value="Across module dependencies" />
+      <setting name="testName" value="" />
+      <setting name="testKind" value="All in package" />
+      <setting name="showProgressMessages" value="true" />
       <RunnerSettings RunnerId="Run" />
       <ConfigurationWrapper RunnerId="Run" />
       <method />
@@ -366,6 +483,19 @@
       <option name="SHMEM_ADDRESS" value="javadebug" />
       <option name="HOST" value="localhost" />
       <option name="PORT" value="5005" />
+      <method />
+    </configuration>
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
       <method />
     </configuration>
     <configuration default="true" type="TestNG" factoryName="TestNG">
@@ -393,19 +523,6 @@
       <envs />
       <properties />
       <listeners />
-      <method />
-    </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
       <method />
     </configuration>
     <configuration default="true" type="Application" factoryName="Application">
@@ -455,14 +572,18 @@
       <setting name="showProgressMessages" value="true" />
       <method />
     </configuration>
-    <list size="2">
-      <item index="0" class="java.lang.String" itemvalue="ScalaTest.LogRollingPrimitivesTest" />
-      <item index="1" class="java.lang.String" itemvalue="Application.runner" />
+    <list size="4">
+      <item index="0" class="java.lang.String" itemvalue="Application.logRoller" />
+      <item index="1" class="java.lang.String" itemvalue="JUnit.All in LogRolling" />
+      <item index="2" class="java.lang.String" itemvalue="ScalaTest.LogRollingPrimitivesTest" />
+      <item index="3" class="java.lang.String" itemvalue="ScalaTest.ScalaTests in 'LogRolling'" />
     </list>
     <recent_temporary>
-      <list size="2">
-        <item index="0" class="java.lang.String" itemvalue="Application.runner" />
-        <item index="1" class="java.lang.String" itemvalue="ScalaTest.LogRollingPrimitivesTest" />
+      <list size="4">
+        <item index="0" class="java.lang.String" itemvalue="Application.logRoller" />
+        <item index="1" class="java.lang.String" itemvalue="JUnit.All in LogRolling" />
+        <item index="2" class="java.lang.String" itemvalue="ScalaTest.ScalaTests in 'LogRolling'" />
+        <item index="3" class="java.lang.String" itemvalue="ScalaTest.LogRollingPrimitivesTest" />
       </list>
     </recent_temporary>
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
@@ -518,27 +639,27 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1920" height="1080" extended-state="0" />
-    <editor active="false" />
+    <frame x="0" y="0" width="1440" height="900" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3299389" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32917705" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3299389" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32917705" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2497332" sideWeight="0.28615072" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3299389" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32917705" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3299389" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2497332" sideWeight="0.6700611" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25400212" sideWeight="0.5947047" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.20444763" sideWeight="0.6708229" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2497332" sideWeight="0.5947047" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.4052953" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.15781923" sideWeight="0.6708229" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19077307" sideWeight="0.56456244" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
     </layout>
@@ -608,26 +729,11 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/HiveConnection.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="95" selection-start="310" selection-end="438" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/HdfsService.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="20" column="72" selection-start="493" selection-end="502" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/test/scala/LogRolling/LogRollingPrimitivesTest.scala">
       <provider selected="true" editor-type-id="text-editor">
         <state line="43" column="43" selection-start="1638" selection-end="1638" vertical-scroll-proportion="0.0">
           <folding>
             <element signature="e#38#60#0" expanded="true" />
-            <marker date="1389293343000" expanded="true" signature="3363:3462" placeholder="{...}" />
           </folding>
         </state>
       </provider>
@@ -639,10 +745,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/RollBabyRoll.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/LogRollingModel.scala">
       <provider selected="true" editor-type-id="text-editor">
         <state line="271" column="22" selection-start="9333" selection-end="9333" vertical-scroll-proportion="0.0">
-          <folding />
+          <folding>
+            <element signature="e#126#164#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -674,7 +782,6 @@
         <state line="43" column="43" selection-start="1638" selection-end="1638" vertical-scroll-proportion="0.0">
           <folding>
             <element signature="e#38#60#0" expanded="true" />
-            <marker date="1389293343000" expanded="true" signature="3363:3462" placeholder="{...}" />
           </folding>
         </state>
       </provider>
@@ -686,9 +793,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/HiveConnection.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="58" column="25" selection-start="2097" selection-end="2097" vertical-scroll-proportion="0.0">
+        <state line="15" column="95" selection-start="310" selection-end="438" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
@@ -700,36 +807,57 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/scala/LogRolling/LogRollingPrimitivesTest.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="20" column="0" selection-start="487" selection-end="487" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#38#60#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="44" column="51" selection-start="1607" selection-end="1607" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/Logger.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="16" column="68" selection-start="386" selection-end="386" vertical-scroll-proportion="0.0">
+        <state line="14" column="0" selection-start="282" selection-end="282" vertical-scroll-proportion="0.0">
           <folding>
             <element signature="e#189#222#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/HiveConnection.scala">
+    <entry file="file://$PROJECT_DIR$/src/test/scala/LogRolling/LogDbOperationsTest.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="95" selection-start="310" selection-end="438" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/scala/LogRolling/LogRollingPrimitivesTest.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="34" column="4" selection-start="1282" selection-end="1282" vertical-scroll-proportion="0.0">
+        <state line="49" column="52" selection-start="1876" selection-end="1876" vertical-scroll-proportion="0.0">
           <folding>
-            <element signature="e#38#60#0" expanded="true" />
-            <marker date="1389293343000" expanded="true" signature="3363:3462" placeholder="{...}" />
+            <element signature="n#!!doc" expanded="true" />
+            <element signature="e#189#211#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/RollBabyRoll.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/LogRollingModel.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="78" column="50" selection-start="3051" selection-end="3051" vertical-scroll-proportion="0.17794971">
-          <folding />
+        <state line="79" column="0" selection-start="2948" selection-end="2948" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#126#164#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/LogRolling/LogDbOperations.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="54" column="33" selection-start="1827" selection-end="1885" vertical-scroll-proportion="0.7278481">
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+            <element signature="e#190#253#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

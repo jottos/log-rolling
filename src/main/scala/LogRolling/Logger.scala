@@ -11,7 +11,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 
-
 class Logger(source: String) {
   val cal = Calendar.getInstance()
   val dateFormatter = new SimpleDateFormat("[yyyy-MM-dd'T'HH:mm:ss.S]");

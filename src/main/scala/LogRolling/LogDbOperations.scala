@@ -1,87 +1,27 @@
-
 /**
  * Created with IntelliJ IDEA.
  * User: jos
- * Date: 11/23/13
- * Time: 9:33 AM
+ * Date: 1/10/14
+ * Time: 5:40 PM
+ * To change this template use File | Settings | File Templates.
  */
+
 package com.apixio.service.LogRoller
 
+import scala.collection.mutable.{MutableList, ArrayBuffer, Map}
+import scala.io.Source._
+import scala.Tuple3
 import com.apixio.utils.HiveConnection
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.Map
-import scala.collection.mutable.MutableList
-import scala.io.Source.fromFile
-
 import java.sql.SQLException
+import com.apixio.service.LogRoller.Logger
 
-object runner {
+// TODO - these imports may need to be switched to LogRollingModel later, currently we are just using an object called logRoller
+import logRoller.KeyMap
+
+class LogDbOperations {
   val log = new Logger(this.getClass.getSimpleName)
-  type TableMap = Map[String, Set[String]]
-  type KeyMap = Map[String, MutableList[Tuple3[Int,Int,Int]]]
-  type ClusterKeyMap = Map[String, KeyMap]
-  // TODO jos, we need to put this typedef into a package that is shared
-  type QueryIterator = Iterator[Map[String,Any]]
 
-  def main(value: Array[String]) = {
-    val hdfsService = new HdfsService()
 
-    log.info("Roll Baby Roll..")
-
-    /**
-     * TODO
-     * operations on the rlist
-     * 1) get the list of distinct keys, map to prod vs staging
-     * 2) get the list/map of directories (partitions) associated with each key
-     * 3) for each key (prod and staging) get the list of partitions that exist today
-     * 4) create diff list that needs to generate new knownTables and new partitions
-     * pretty much done at this point :)
-     */
-    val dirList = hdfsService.getAllDirs("/user/logmaster/production")
-    val OtherLogKey = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
-    val KeyWithPartition = """.*(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2})""".r
-    val bigKeyMap : ClusterKeyMap = Map()
-    dirList.map(f=>f.getPath.toString).foreach(f=>
-      f match {
-        case KeyWithPartition(cluster, key, year, month, day) => {
-          val date = Tuple3(year.toInt, month.toInt, day.toInt)
-          val keyMap : KeyMap =
-            if (bigKeyMap.contains(cluster))
-              bigKeyMap(cluster)
-            else {
-              bigKeyMap(cluster) = Map(): KeyMap
-              bigKeyMap(cluster)
-            }
-          keyMap(key) = if (keyMap.contains(key)) keyMap(key) ++= List(date) else MutableList(date)
-          log.info(f"adding partition $date%s for key $key%s")
-        }
-        case OtherLogKey(cluster, key) => log.info(f"got (cluster,key)=($cluster%s,$key%s)")
-        case _=> log.warn(f"Error: No match found for: $f%s")
-      })
-    log.info("")
-    log.info("finished dirList.map")
-    log.info(f"got keys: $bigKeyMap%s")
-    log.info("fetching table map")
-    val TableNames = """.*(production|staging)_logs_([a-zA-Z\d]+).*""".r
-    var tableMap : TableMap = Map()
-    hiveTables.foreach(f=>
-      f match {
-        case TableNames(cluster, table) => {
-          val newList = if (tableMap.contains(cluster)) tableMap(cluster) ++ Set(table) else Set(table)
-          tableMap += cluster -> newList
-        }
-        case _=> log.warn(f"got hive table that doesn't match: $f%s")
-    })
-    log.info(f"got knownTables: $tableMap%s")
-
-    log.info("checking for tables")
-    val missingProductionTables = checkForAllTables(bigKeyMap("production"), tableMap("production"))
-    val missingPartitions = checkForAllPartitions(bigKeyMap("production"))
-
-    log.info(f"missing tables $missingProductionTables%s")
-    log.info(f"missing partitions $missingPartitions")
-    //val missingTables = checkForAllTables(bigKeyMap("production"), hiveTables("production"))
-  }
 
   /**
    * checkForAllTables - given a list of keys for which we expect that there should be matching knownTables in hive, check
@@ -139,16 +79,12 @@ object runner {
     (date._2, week, date._1)
   }
 
-//
-// MISC
-//
-def getLines(filePath : String) = fromFile(filePath).getLines()
 
-//
-// HIVE
-//
+  //
+  // HIVE
+  //
 
- /**
+  /**
    * hiveConnection - create and maintain access for the application HiveConnection
    */
   private var hiveConn : HiveConnection = null
@@ -173,7 +109,7 @@ def getLines(filePath : String) = fromFile(filePath).getLines()
       checkTableExists(tableName)
     } catch {
       case ex: Exception => log.error(f"createTable: crashed out with $ex%s")
-      return false
+        return false
     }
   }
 
@@ -256,25 +192,4 @@ def getLines(filePath : String) = fromFile(filePath).getLines()
     true // returning true, because hive jdbc seems to always return false
   }
 
-  /**
-   * TEST FUNCTIONS
-   */
-  def runTests = {
-    log.info("RUNNING TESTS")
-    val cte1 =checkTableExists("production_logs_parserjob_24")
-    val cte2 = checkTableExists("production_logs_parserjob_21")
-    log.info(f"checkTableExits true:$cte1%b, false:$cte2%b")
-
-    val partitions = getTablePartitions("production_logs_parserjob_epoch")
-    log.info("got partion len:" + partitions.length)
-    partitions.foreach(println(_))
-
-    if (createTable("jos_logs_test_table"))
-      log.info("create and check work properly")
-    else
-      println("create table :(")
-
-    exit()
-  }
 }
-
