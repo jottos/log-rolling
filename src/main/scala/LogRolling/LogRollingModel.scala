@@ -16,6 +16,13 @@ import scala.io.Source.fromFile
 import java.sql.SQLException
 
 object logRoller {
+  // LogKey:  Tuple2[String=>clusterName, String=>metricName]
+  type LogKey = Tuple2[String, String]
+  // PartitionMetaData: Tuple6[Int=>yr, Int=>mo, Int=monthDay, Int=>yearDay, String=>location, Boolean=>isCached]
+  type PartitionMetaData = Tuple6[Int, Int, Int, Int, String, Boolean]
+  type KeyTable = Map[LogKey, MutableList[PartitionMetaData]]
+
+
   type TableMap = Map[String, Set[String]]
   type KeyMap = Map[String, MutableList[Tuple3[Int,Int,Int]]]
   type ClusterKeyMap = Map[String, KeyMap]
