@@ -1,5 +1,7 @@
 out
 # need this now that we are using Maven - .idea
+.idea/workspace.xml
+.idea/tasks.xml
 \#*
 \#*#
 *~
