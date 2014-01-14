@@ -15,12 +15,33 @@ import scala.io.Source.fromFile
 
 import java.sql.SQLException
 
+case class PartitionFoo
+(val year: Int, val month: Int) {
+ override def toString = "this is my 2 string"
+}
+
+
+
 object logRoller {
   // LogKey:  Tuple2[String=>clusterName, String=>metricName]
   type LogKey = Tuple2[String, String]
   // PartitionMetaData: Tuple6[Int=>yr, Int=>mo, Int=monthDay, Int=>yearDay, String=>location, Boolean=>isCached]
   type PartitionMetaData = Tuple6[Int, Int, Int, Int, String, Boolean]
   type KeyTable = Map[LogKey, MutableList[PartitionMetaData]]
+
+  def year(md: PartitionMetaData) : Int = md._1
+  def month(md: PartitionMetaData) : Int = md._2
+  def monthDay(md: PartitionMetaData) : Int = md._3
+  def yearDay(md: PartitionMetaData) : Int = md._4
+  def location(md: PartitionMetaData) : String = md._5
+  def isCached(md: PartitionMetaData) : Boolean = md._6
+
+val p = PartitionFoo(2012, 12)
+  val x = p.year
+
+  p match{
+    case PartitionFoo(2013, m) => println(m)
+  }
 
 
   type TableMap = Map[String, Set[String]]
