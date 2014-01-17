@@ -14,49 +14,108 @@ import scala.collection.mutable.MutableList
 import scala.io.Source.fromFile
 
 import java.sql.SQLException
-
-case class PartitionFoo
-(val year: Int, val month: Int) {
- override def toString = "this is my 2 string"
-}
-
-
+import scala.util.matching.Regex
 
 object logRoller {
+  // Partition: Tuple6[Int=>yr, Int=>mo, Int=monthDay, Int=>yearDay, String=>location, Boolean=>isCached]
+  case class Partition(year: Int, month: Int, monthDay: Int, yearDay: Int, location: String, isCached: Boolean) {
+    override def toString = f"$year%s,$month%s,$monthDay%s,$yearDay%s,$location%s,$isCached%s"
+  }
   // LogKey:  Tuple2[String=>clusterName, String=>metricName]
   type LogKey = Tuple2[String, String]
-  // PartitionMetaData: Tuple6[Int=>yr, Int=>mo, Int=monthDay, Int=>yearDay, String=>location, Boolean=>isCached]
-  type PartitionMetaData = Tuple6[Int, Int, Int, Int, String, Boolean]
-  type KeyTable = Map[LogKey, MutableList[PartitionMetaData]]
+  type PartitionList = MutableList[Partition]
+  type KeyTable = Map[LogKey, PartitionList]
+  type Location = String
 
-  def year(md: PartitionMetaData) : Int = md._1
-  def month(md: PartitionMetaData) : Int = md._2
-  def monthDay(md: PartitionMetaData) : Int = md._3
-  def yearDay(md: PartitionMetaData) : Int = md._4
-  def location(md: PartitionMetaData) : String = md._5
-  def isCached(md: PartitionMetaData) : Boolean = md._6
-
-val p = PartitionFoo(2012, 12)
-  val x = p.year
-
-  p match{
-    case PartitionFoo(2013, m) => println(m)
-  }
-
-
-  type TableMap = Map[String, Set[String]]
-  type KeyMap = Map[String, MutableList[Tuple3[Int,Int,Int]]]
-  type ClusterKeyMap = Map[String, KeyMap]
-  // TODO jos, we need to put this typedef into a package that is shared
-  type QueryIterator = Iterator[Map[String,Any]]
+    // extract the components of a LogKey from the top level location directory
+  val LogKeyExtractor = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
+  // extract the partition components
+  val PartitionExtractor = """.*(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2})""".r
 
   val log = new Logger(this.getClass.getSimpleName)
   val logOps = new LogDbOperations()
+  val hdfs = new HdfsService()
+  val keyTable: KeyTable = Map(): KeyTable
+  val keyLocation = "/user/logmaster/production/opprouter"
 
-  def main(value: Array[String]) = {
-    val hdfsService = new HdfsService()
+  def main(args: Array[String]) = {
+    log.info("this is our new main program")
 
+    // test, add a location, then re-add it, there should only be one when we look
+    // both should return true
+    log.info(f"adding key location $keyLocation%s")
+    addKey(keyLocation)
+    log.info(f"re-adding key location $keyLocation%s")
+    addKey(keyLocation)
+    log.info(f"keyTable is: $keyTable%s")
+
+    // hive does not support insert into
+    //logOps.putLogKey(("production","opprouter"), partitionList)
+    logOps.persistKeyTable(keyTable)
+
+    val newKeyTable = logOps.readKeyTable("/tmp/apxlog_keytable.csv")
+    log.info(f"got keytable from file: $newKeyTable%s")
+  }
+
+  // operator set
+  //
+  def hasPartitionsForKey(kt: KeyTable, k: LogKey) : Boolean = kt.contains(k)
+  def partitionsForKey(kt: KeyTable, k: LogKey) : PartitionList = if (kt.contains(k)) kt(k) else new PartitionList
+
+  // add partition to keytable and flush new row to hive
+  def addPartition(kt: KeyTable, k: LogKey, p: Partition) = println("todo, addPartition")
+
+  /**
+   * Given location of log data, go out and determine the partitions needed, add metadata to keyTable and
+   * create needed
+   * @param location - location of log data as path in S3 and HDFS. It is expected to be the directory where all the
+   *                 partitions for this key are located
+   *
+   * TODO: add search though S3 log data for partitions (only doing HDFS right now)
+   */
+  def addKey(location: Location): Boolean = {
+    val partitionDirs = hdfs.getAllDirs(location)
+    val partitionList = new MutableList[Partition]()
+    def yearDay = 365
+
+    //jos- can we get away with a case class here for the LogKey
+    val LogKeyExtractor(cluster, key) = location
+    val logKey = (cluster, key)
+
+    if (hasPartitionsForKey(keyTable, logKey))
+      return true
+
+    try {
+      log.info(f"key $logKey%s not found in keytable, creating it")
+      partitionDirs.map(fileStatus => fileStatus.getPath.toString).foreach(dirName => {
+        dirName match {
+          case PartitionExtractor(cluster, key, year, month, day) => {
+            partitionList += Partition(year.toInt, month.toInt, day.toInt, yearDay, dirName.toString, true)
+          }
+          case _ => log.warn(f"Error: No match found for: $dirName%s")
+        }
+      })
+      keyTable += logKey -> partitionList
+
+      logOps.createPartitionsForKey(logKey: LogKey, partitionList: PartitionList)
+
+      return true
+    } catch {
+      case ex: Exception => log.error(f"addKey: $ex%s")
+        return false
+    }
+  }
+
+
+  type KeyMap = Map[String, MutableList[Tuple3[Int,Int,Int]]]
+
+// TODO: JOS- move most of this to tests, through out the rest
+  def oldMain(value: Array[String]) = {
     log.info("Roll Baby Roll..")
+    type TableMap = Map[String, Set[String]]
+
+    type ClusterKeyMap = Map[String, KeyMap]
+    // TODO jos, we need to put this typedef into a package that is shared
 
     /**
      * TODO
@@ -67,13 +126,12 @@ val p = PartitionFoo(2012, 12)
      * 4) create diff list that needs to generate new knownTables and new partitions
      * pretty much done at this point :)
      */
-    val dirList = hdfsService.getAllDirs("/user/logmaster/production")
-    val OtherLogKey = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
-    val KeyWithPartition = """.*(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2})""".r
+    val dirList = hdfs.getAllDirs("/user/logmaster/production")
+
     val bigKeyMap : ClusterKeyMap = Map()
     dirList.map(f=>f.getPath.toString).foreach(f=>
       f match {
-        case KeyWithPartition(cluster, key, year, month, day) => {
+        case PartitionExtractor(cluster, key, year, month, day) => {
           val date = Tuple3(year.toInt, month.toInt, day.toInt)
           val keyMap : KeyMap =
             if (bigKeyMap.contains(cluster))
@@ -85,7 +143,7 @@ val p = PartitionFoo(2012, 12)
           keyMap(key) = if (keyMap.contains(key)) keyMap(key) ++= List(date) else MutableList(date)
           log.info(f"adding partition $date%s for key $key%s")
         }
-        case OtherLogKey(cluster, key) => log.info(f"got (cluster,key)=($cluster%s,$key%s)")
+        case LogKeyExtractor(cluster, key) => log.info(f"got (cluster,key)=($cluster%s,$key%s)")
         case _=> log.warn(f"Error: No match found for: $f%s")
       })
     log.info("")
@@ -106,17 +164,14 @@ val p = PartitionFoo(2012, 12)
 
     log.info("checking for tables")
     val missingProductionTables = logOps.checkForAllTables(bigKeyMap("production"), tableMap("production"))
-    val missingPartitions = logOps.checkForAllPartitions(bigKeyMap("production"))
+// jos currently broken
+//     val missingPartitions = logOps.checkForAllPartitions(bigKeyMap("production"))
 
     log.info(f"missing tables $missingProductionTables%s")
-    log.info(f"missing partitions $missingPartitions")
+//    log.info(f"missing partitions $missingPartitions")
     //val missingTables = checkForAllTables(bigKeyMap("production"), hiveTables("production"))
   }
 
-  //
-  // MISC
-  //
-  def getLines(filePath : String) = fromFile(filePath).getLines()
 
 }
 

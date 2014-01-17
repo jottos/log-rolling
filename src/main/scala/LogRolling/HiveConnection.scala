@@ -2,6 +2,7 @@ package com.apixio.utils
 
 import java.sql.DriverManager
 import scala.collection.immutable.TreeMap
+import com.apixio.service.LogRoller.Logger
 
 /**
  * A simple wrapper to access sql databases or hive and get to the
@@ -14,11 +15,13 @@ import scala.collection.immutable.TreeMap
  */
 
 class HiveConnection(jdbcUrl:String, username:String, password:String, driverName:String = "org.apache.hive.jdbc.HiveDriver") {
+  val log = new Logger(this.getClass.getSimpleName)
   Class.forName(driverName)
   type QueryIterator = Iterator[Map[String,Any]]
   private val con = DriverManager.getConnection(jdbcUrl,username,password)
 
   def execute(query:String) : Boolean = {
+    log.info(f"execute got query: $query%s")
     val stmt = con.createStatement()
     stmt.execute(query)
   }

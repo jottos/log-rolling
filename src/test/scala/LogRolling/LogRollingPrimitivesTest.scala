@@ -2,6 +2,7 @@ package com.apixio.service.LogRoller
 
 import org.scalatest._
 import com.apixio.utils.HiveConnection
+import scala.collection.mutable.{MutableList, Map}
 
 
 /**
@@ -12,22 +13,24 @@ import com.apixio.utils.HiveConnection
  * To change this template use File | Settings | File Templates.
  */
 class LogRollingPrimitivesTest extends FlatSpec with ShouldMatchers {
-  val hdfsService = new HdfsService()
+  case class Partition(year: Int, month: Int, monthDay: Int, yearDay: Int, location: String, isCached: Boolean) {
+    override def toString = f"$year%s,$month%s,$monthDay%s,$yearDay%s,$location%s,$isCached%s"
+  }
+  //TODO: tests that show that LogKeys are values and no matter how many times we construct them or from where they always are eqv? and will pull the right item from our Map()
+  type LogKey = Tuple2[String, String]
+  type KeyTable = Map[LogKey, MutableList[Partition]]
+  // example partition instance
+  val p = Partition(2012, 12, 1, 334, "/user/logmaster/production/fooKey", false)
+  val yr = p.year
 
-  //it should "be able to fail" in { 0 should be (1)}
+  val kt : KeyTable = Map()
+  kt += ("a", "b") -> MutableList(p)
 
-// jos put these in a hive primitives class and then update this test
 
-
-// class LogRollingPatternMatchTests
-  "hdfsService" should "be able to ls /user/logmaster" in {
-    val dirs = hdfsService.ls("/tmp")
-    dirs.size should be > 0
+  p match{
+    case Partition(2012, m, md, yd, loc, cached) => println(m)
   }
 
-  "hdfsService" should "be able to get directory tree for /user/logmaster/production" in {
-    val dirTree = hdfsService.getAllDirs("/user/logmaster/production")
-  }
 
   "the LogKey pattern" should "be able to match Cluster and Key" in {
     val LogKey = """.*(production|staging)\/([a-zA-Z\d]+).*""".r

@@ -29,6 +29,20 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
     complexAnswer.size should be > 0
   }
 
+  "hiveConnection" should "be able to drop old keyTable" in {
+    val keyTableName = logDbOps.keyTableName
+    hc.execute(f"drop table if exists $keyTableName%s") should be (true)
+  }
+
+  "checkKeyTable" should "be able to create new keytable" in {
+    logDbOps.checkKeyTable should be (true)
+  }
+
+  "checkKeyTable" should "be able to check and find keytable that already exists" in {
+    logDbOps.checkKeyTable should be (true)
+  }
+
+  // re-
 
   "checkTableExits" should "be able to find production_logs_parserjob_24" in {
     val cte =logDbOps.checkTableExists("production_logs_parserjob_24")
@@ -43,7 +57,7 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
     logDbOps.getTablePartitions("production_logs_parserjob_epoch").length should be > 0
   }
 
-  "createTable" should "be able to create table 'jos_logs_test_tabel'" in {
-    logDbOps.createTable("jos_logs_test_table") should be (true)
+  "createPartitionTable" should "be able to create table 'jos_logs_test_table'" in {
+    logDbOps.createPartitionTable("jos_logs_test_table") should be (true)
   }
 }
