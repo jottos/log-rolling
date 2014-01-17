@@ -4,6 +4,7 @@ out
 .idea/tasks.xml
 \#*
 \#*#
+.#*
 *~
 *.class
 # Package Files #

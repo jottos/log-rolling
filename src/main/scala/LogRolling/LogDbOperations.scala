@@ -18,6 +18,7 @@ import logRoller.PartitionList
 import logRoller.KeyTable
 import logRoller.Partition
 import java.io.{PrintWriter, File}
+import scala.collection.mutable
 
 // TODO - these imports may need to be switched to LogRollingModel later, currently we are just using an object called logRoller
 import com.apixio.service.LogRoller.logRoller.{LogKey, KeyMap}
@@ -322,15 +323,15 @@ class LogDbOperations {
 
 
   private val PartitionTableExtractor = """month=(\d{2})\/week=(\d{2})\/day=(\d{2})""".r
-  //type PartitionList = ArrayBuffer[Tuple3[Int,Int,Int]]
+
+  // TODO - this needs to be converted to new Partition case class
   /**
    * getTablePartitions - return a PartitionList for the table provided
    * @param tableName
    * @return
    */
-  def getTablePartitions(tableName: String) : PartitionList = {
-/*
-    val partitions : PartitionList = ArrayBuffer()
+  def getTablePartitions(tableName: String) : MutableList[Tuple3[Int,Int,Int]] = {
+    val partitions : MutableList[Tuple3[Int,Int,Int]] = MutableList()
     try {
       val partitionInfo = hiveConnection.fetch(f"show partitions $tableName%s")
       partitionInfo.foreach(f=>{
@@ -348,8 +349,6 @@ class LogDbOperations {
       }
     }
     partitions
-    */
-    null
   }
 
   def checkTableExists(tableName: String) : Boolean = {
