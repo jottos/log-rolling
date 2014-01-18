@@ -7,19 +7,26 @@
  */
 package com.apixio.service.LogRoller
 
-import com.apixio.utils.HiveConnection
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Map
 import scala.collection.mutable.MutableList
-import scala.io.Source.fromFile
 
-import java.sql.SQLException
-import scala.util.matching.Regex
+/**
+ * Central object and control for log rolling
+ */
+object LogRoller {
 
-object logRoller {
-  // Partition: Tuple6[Int=>yr, Int=>mo, Int=monthDay, Int=>yearDay, String=>location, Boolean=>isCached]
-  case class Partition(year: Int, month: Int, monthDay: Int, yearDay: Int, location: String, isCached: Boolean) {
-    override def toString = f"$year%s,$month%s,$monthDay%s,$yearDay%s,$location%s,$isCached%s"
+  /**
+   * Partition Metadata
+   * @param year - gregorian year
+   * @param month - 1-12
+   * @param day - 1-31
+   * @param ordinalDay - 1-366
+   * @param location - path to partition excluding the scheme, host & port
+   * @param isCached - is this partition data in hdfs? (changes location)
+   */
+  case class Partition(year: Int, month: Int, day: Int, ordinalDay: Int, location: String, isCached: Boolean) {
+    override def toString = f"$year%s,$month%s,$day%s,$ordinalDay%s,$location%s,$isCached%s"
+    def sqlPartitionNotation = f"(year=$year, month=$month, day=$day, ordinalday=$ordinalDay,location='$location')"
   }
   // LogKey:  Tuple2[String=>clusterName, String=>metricName]
   type LogKey = Tuple2[String, String]
@@ -43,9 +50,9 @@ object logRoller {
 
     // test, add a location, then re-add it, there should only be one when we look
     // both should return true
-    log.info(f"adding key location $keyLocation%s")
+    log.info(f"adding key location $keyLocation")
     addKey(keyLocation)
-    log.info(f"re-adding key location $keyLocation%s")
+    log.info(f"re-adding key location $keyLocation")
     addKey(keyLocation)
     log.info(f"keyTable is: $keyTable%s")
 
@@ -75,32 +82,38 @@ object logRoller {
    */
   def addKey(location: Location): Boolean = {
     val partitionList = new MutableList[Partition]()
-    def yearDay = 365
 
     //jos- can we get away with a case class here for the LogKey
     val LogKeyExtractor(cluster, key) = location
     val logKey = (cluster, key)
-
-    if (hasPartitionsForKey(keyTable, logKey))
+    log.info(f"addKey: location=$location")
+    if (hasPartitionsForKey(keyTable, logKey)) {
+      log.info("addKey: location already exists")
       return true
-
+    }
     val partitionDirs = hdfs.getAllDirs(location)
+
+    log.info(s"partition dirs for $location are:\n ${partitionDirs.map(_.getPath.toString).mkString("\n")}")
     try {
       log.info(f"key $logKey%s not found in keytable, creating it")
       partitionDirs.map(fileStatus => fileStatus.getPath.toString) foreach {
-          case dirName @ PartitionExtractor(cluster, key, year, month, day) => {
-            partitionList += Partition(year.toInt, month.toInt, day.toInt, yearDay, dirName.toString, true)
-          }
-          case dirName @ _ => log.warn(f"Error: No match found for: $dirName%s")
+        case dirName @ PartitionExtractor(cluster, key, year, month, day) => {
+          val ordinalDay = logOps.ordinalDay(year.toInt, month.toInt, day.toInt)
+          partitionList += Partition(year.toInt, month.toInt, day.toInt, ordinalDay, dirName, true)
+        }
+        case dirName @ _ => log.warn(f"Error: No match found for: $dirName%s")
       }
+      log.info(s"partitions are $location:\n ${partitionList.map(_ toString).mkString("\n")}")
       keyTable += logKey -> partitionList
 
       logOps.createPartitionsForKey(logKey: LogKey, partitionList: PartitionList)
 
       return true
     } catch {
-      case ex: Exception => log.error(f"addKey: $ex%s")
+      case ex: Exception => {
+        log.error(f"addKey why am i here?: $ex%s")
         return false
+      }
     }
   }
 

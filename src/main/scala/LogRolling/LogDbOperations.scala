@@ -14,19 +14,19 @@ import scala.Tuple3
 import com.apixio.utils.HiveConnection
 import java.sql.SQLException
 
-import logRoller.PartitionList
-import logRoller.KeyTable
-import logRoller.Partition
+import LogRoller.PartitionList
+import LogRoller.KeyTable
+import LogRoller.Partition
 import java.io.{PrintWriter, File}
 import scala.collection.mutable
 
 // TODO - these imports may need to be switched to LogRollingModel later, currently we are just using an object called logRoller
-import com.apixio.service.LogRoller.logRoller.{LogKey, KeyMap}
+import com.apixio.service.LogRoller.LogRoller.{LogKey, KeyMap}
 
 class LogDbOperations {
   val log = new Logger(this.getClass.getSimpleName)
 
-  val keyTableName = "apxlog_keytable"
+  val keyTableName = "apx_logmaster"
   val keyTableFile = "/tmp/apxlog_keytable.csv"
 
   //
@@ -130,65 +130,41 @@ class LogDbOperations {
    */
   def createPartitionsForKey(logKey: LogKey, partitions: PartitionList) : Boolean = {
     val sql = partitions
-      .map(p=> s"alter table $keyTableName add if not exists partition (year='${p.year}%s', month='${p.month}%s', monthday='${p.monthDay}%s', yearday='${p.yearDay}%s') location '${p.location}%s';")
+      .map(p=> s"alter table $keyTableName add if not exists partition ${p.sqlPartitionNotation};")
       .mkString("\n")
 
     try {
-      return hiveConnection.execute(sql)
+      println(sql)
+      return true
+//      return hiveConnection.execute(sql)
     } catch {
       case ex: Exception => log.error(f"putLogKey: failed on inserts with $ex%s")
         return false
     }
   }
 
+
+
   /**
-   * Given a logKey and a list of partitions, persist this as a set of
-   * rows in the Hive backing store for the logging model
-   *
-   * @param key
-   * @param partitions
+   * create the logmaster keyTable if it does not exist
+   * @return
    */
-  def putLogKey(key: LogKey, partitions: PartitionList) = {
-    // build query
-    // TODO: jos, try doing a partition helper class for StringContext
+   def checkKeyTable : Boolean = {
+     val keyTableCreateScript =
+       s"""CREATE EXTERNAL TABLE IF NOT EXISTS $keyTableName (
+          line STRING COMMENT 'log line, formated in json'
+          ) COMMENT 'universal apixio log table, contains partitions for all systems and logging keys'
+          PARTITIONED BY (
+          system     STRING COMMENT 'the system the source came from, e.g. production or staging',
+          source     STRING COMMENT 'the system component that generated the log',
+          year       INT COMMENT 'the year in which the log was created',
+          month      INT COMMENT 'the month of the year the log was created',
+          day        INT COMMENT 'the day of the month the log was created',
+          ordinalday INT COMMENT 'the day of year the log was created'
+          )
+         ROW FORMAT DELIMITED LINES TERMINATED BY '\n'
+         STORED AS TEXTFILE""";
 
-    var inserts: String = ""
-
-    // first check to make sure key is not in table, if it is
-    // ? bail or ?overwrite
-    partitions.foreach(p=>{
-      val year = p.year
-      val month = p.month
-      val monthday = p.monthDay
-      val yearday = p.yearDay
-      val location = p.location
-      val iscached = p.isCached
-
-      inserts += f"insert into $keyTableName%s values($year%s, $month%s, $monthday%s, $yearday%s, '$location%s', $iscached%s)\n"
-    })
-    try {
-    hiveConnection.execute(inserts)
-    } catch {
-      case ex: Exception => log.error(f"putLogKey: failed on inserts with $ex%s")
-    }
-    println(inserts)
-
-  }
-
-
-  // DEPRECATED - hive cannot insert rows, this is deprecated until we have a store
-  /// that can support us. we use a csv file for now
-  //
-  val keyTableCreateScript = f"""create table if not exists $keyTableName%s(
-    year int comment 'year partition',
-    month int comment 'month partition',
-    monthday int comment 'day of month partition',
-    yearday int comment 'day of year partition',
-    data_location string comment 'path where directory of partitions is located',
-    iscached boolean comment 'this partition is in hdfs cache')
-    comment 'loging table partition metadata'"""
-
-  def checkKeyTable : Boolean = {
       try {
         hiveConnection.execute(keyTableCreateScript)
         log.info(f"checked/created $keyTableName%s")
@@ -198,6 +174,8 @@ class LogDbOperations {
           return false
     }
   }
+
+
 
   /**
    * checkForAllTables - given a list of keys for which we expect that there should be matching knownTables in hive, check
@@ -218,6 +196,42 @@ class LogDbOperations {
   }
 
 
+  /**
+   * DEPRECATED - THIS METHOD NO LONGER RELEVANT, may become so again if we move to MySQL or ApacheDrill for metadata
+   * Given a logKey and a list of partitions, persist this as a set of
+   * rows in the Hive backing store for the logging model
+   *
+   * @ param key
+   * @ param partitions
+   * /
+
+  def putLogKey(key: LogKey, partitions: PartitionList) = {
+    // build query
+    // TODO: jos, try doing a partition helper class for StringContext
+
+    var inserts: String = ""
+
+    // first check to make sure key is not in table, if it is
+    // ? bail or ?overwrite
+    partitions.foreach(p=>{
+      val year = p.year
+      val month = p.month
+      val monthday = p.monthDay
+      val yearday = p.yearDay
+      val location = p.location
+      val iscached = p.isCached
+
+      inserts += f"insert into $keyTableName%s values($year%s, $month%s, $monthday%s, $yearday%s, '$location%s', $iscached%s)\n"
+    })
+    try {
+      hiveConnection.execute(inserts)
+    } catch {
+      case ex: Exception => log.error(f"putLogKey: failed on inserts with $ex%s")
+    }
+    println(inserts)
+
+  }
+  */
 
   /**
    * checkForAllPartitions - given a keymap check that all required partitions specified in map do indeed exist
@@ -372,4 +386,21 @@ class LogDbOperations {
     true // returning true, because hive jdbc seems to always return false
   }
 
+  val monthBases = List(0,31,59,90,120,151,181,212,243,273,304,334)
+  val monthBasesLeapYear = List(0,31,60,91,121,152,182,213,244,274,305,335)
+  def isLeapYear(year:Int): Boolean = if (year%100==0) year%400==0 else year%4==0
+
+  /**
+   * calculate the ordinal day from y/m/d
+   * @param year
+   * @param month
+   * @param day
+   * @return the ordinal Day
+   */
+  def ordinalDay(year: Int, month: Int, day: Int) : Int = {
+    return day + (if (isLeapYear(year))
+      monthBasesLeapYear(month-1)
+    else
+      monthBases(month-1))
+  }
 }
