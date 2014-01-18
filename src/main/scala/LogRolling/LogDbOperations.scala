@@ -50,7 +50,7 @@ class LogDbOperations {
    * @return Unit
    */
   def printToFile(file: File)(printingFunction: PrintWriter => Unit) {
-    val p = new PrintWriter(file)
+    val p = new PrintWriter(file, "UTF-8")
     try {
       printingFunction(p)
     } finally {
@@ -63,7 +63,7 @@ class LogDbOperations {
    * @param filePath
    * @return
    */
-  def getLines(filePath : String) = fromFile(filePath).getLines()
+  def getLines(filePath : String) = fromFile(filePath)("UTF-8").getLines()
 
   /**
    * write keytable to disk, move current keyTable file to tmp location first if it exists, then write out new file
@@ -84,20 +84,9 @@ class LogDbOperations {
 
       keyTableFile renameTo backUpKeyTable
 
-      printToFile(keyTableFile)(pw=>{
-        kte._2.foreach(partition=>{
-          val year =  partition.year
-          val month =  partition.month
-          val monthday =  partition.monthDay
-          val yearday =  partition.yearDay
-          val location =  partition.location
-          val iscached =  partition.isCached
-          //TODO - print to file
-          pw.println(f"$cluster%s,$metric%s,$year%s,$month%s,$monthday%s,$yearday%s,$location%s,$iscached%s")
-        })
-      })
-      // JOS - for now let's hold onto the backup files
-      // backUpKeyTable delete
+      printToFile(keyTableFile) { pw=>
+        pw.println(kte._2.map(p=>s"$cluster,$metric,${p}").mkString("\n"))
+      }
     })
   }
 
@@ -140,22 +129,12 @@ class LogDbOperations {
    * @return
    */
   def createPartitionsForKey(logKey: LogKey, partitions: PartitionList) : Boolean = {
-    var sql = ""
+    val sql = partitions
+      .map(p=> s"alter table $keyTableName add if not exists partition (year='${p.year}%s', month='${p.month}%s', monthday='${p.monthDay}%s', yearday='${p.yearDay}%s') location '${p.location}%s';")
+      .mkString("\n")
 
-    partitions.foreach(p=>{
-      val year = p.year
-      val month = p.month
-      val monthday = p.monthDay
-      val yearday = p.yearDay
-      val location = p.location
-      val iscached = p.isCached
-
-      sql += f"insert into $keyTableName%s values($year%s, $month%s, $monthday%s, $yearday%s, '$location%s', $iscached%s)\n"
-    })
     try {
-      log.info(sql)
-      //return hiveConnection.execute(sql)
-      return true
+      return hiveConnection.execute(sql)
     } catch {
       case ex: Exception => log.error(f"putLogKey: failed on inserts with $ex%s")
         return false

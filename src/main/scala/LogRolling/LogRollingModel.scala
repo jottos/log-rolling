@@ -74,7 +74,6 @@ object logRoller {
    * TODO: add search though S3 log data for partitions (only doing HDFS right now)
    */
   def addKey(location: Location): Boolean = {
-    val partitionDirs = hdfs.getAllDirs(location)
     val partitionList = new MutableList[Partition]()
     def yearDay = 365
 
@@ -85,16 +84,15 @@ object logRoller {
     if (hasPartitionsForKey(keyTable, logKey))
       return true
 
+    val partitionDirs = hdfs.getAllDirs(location)
     try {
       log.info(f"key $logKey%s not found in keytable, creating it")
-      partitionDirs.map(fileStatus => fileStatus.getPath.toString).foreach(dirName => {
-        dirName match {
-          case PartitionExtractor(cluster, key, year, month, day) => {
+      partitionDirs.map(fileStatus => fileStatus.getPath.toString) foreach {
+          case dirName @ PartitionExtractor(cluster, key, year, month, day) => {
             partitionList += Partition(year.toInt, month.toInt, day.toInt, yearDay, dirName.toString, true)
           }
-          case _ => log.warn(f"Error: No match found for: $dirName%s")
-        }
-      })
+          case dirName @ _ => log.warn(f"Error: No match found for: $dirName%s")
+      }
       keyTable += logKey -> partitionList
 
       logOps.createPartitionsForKey(logKey: LogKey, partitionList: PartitionList)
@@ -106,10 +104,11 @@ object logRoller {
     }
   }
 
+  //
+  // TODO: JOS- move most of this to tests, through out the rest
 
   type KeyMap = Map[String, MutableList[Tuple3[Int,Int,Int]]]
 
-// TODO: JOS- move most of this to tests, through out the rest
   def oldMain(value: Array[String]) = {
     log.info("Roll Baby Roll..")
     type TableMap = Map[String, Set[String]]
