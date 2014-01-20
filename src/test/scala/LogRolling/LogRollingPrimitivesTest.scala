@@ -61,7 +61,20 @@ class LogRollingPrimitivesTest extends FlatSpec with ShouldMatchers {
     day should be ("10")
   }
 
-  "the PartitionExtractor pattern" should "be able to match Path, Cluster, Metric, Year, Month & Day groups" in {
+  "PartitionFromPartitionTableExtractor" should "be able to match system,source,year,month,day,ordinalday" in {
+    //val PartitionTableExtractor = """system=(production|staging)\/source=([a-zA-Z\d]+)\/year=(\d{4})\/month=(\d+)\/day=(\d{2})\/ordinalday=(\d{2})""".r
+    val PartitionTableExtractor = """system=(production|staging)\/source=([a-zA-Z\d]+)\/year=(\d{4})\/month=(\d{1,2})\/day=(\d{1,2})\/ordinalday=(\d{1,2})""".r
+    val PartitionTableExtractor(system,source,year,month,day,ordinalday) = "system=production/source=opprouter/year=2014/month=1/day=20/ordinalday=20"
+
+    system should be ("production")
+    source should be ("opprouter")
+    year should be ("2014")
+    month should be ("1")
+    day should be ("20")
+    ordinalday should be ("20")
+  }
+
+  "the PartitionFromHdfsPathExtractor pattern" should "be able to match Path, Cluster, Metric, Year, Month & Day groups" in {
     val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
     val PartitionExtractor(path, cluster, source, year, month, day) = "hdfs://54.215.109.178:8020/user/logmaster/production/opprouter/2013-12-24"
 

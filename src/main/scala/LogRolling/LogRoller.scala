@@ -7,6 +7,8 @@
 package com.apixio.service.LogRolling
 
 import scala.collection.mutable
+import org.apache.hadoop.fs.FileStatus
+
 /**
  * Central object and control for log rolling
  */
@@ -23,9 +25,12 @@ object LogRoller {
    */
   case class Partition(system: String, source: String, year: Int, month: Int, day: Int, ordinalDay: Int, location: String, isCached: Boolean) {
     override def toString = f"$system,$source,$year,$month,$day,$ordinalDay,$location,$isCached"
-    def sqlPartitionNotation = {
+    def sqlPartitionNotationAndLocation = {
       val fqLocation = f"hdfs://$internalHdfsHost:8020$location"
       f"(system='$system', source='$source', year=$year, month=$month, day=$day, ordinalday=$ordinalDay) location '$fqLocation'"
+    }
+    def sqlPartitionNotation = {
+      f"(system='$system', source='$source', year=$year, month=$month, day=$day, ordinalday=$ordinalDay)"
     }
   }
   // LogKey:  Tuple2[String=>clusterName, String=>metricName]
@@ -52,26 +57,26 @@ object LogRoller {
   def main(args: Array[String]) = {
     log.info("this is our new main program")
 
-    // test, add a location, then re-add it, there should only be one when we look
-    // both should return true
-    log.info(f"adding key location $keyLocation")
-    addKey(keyLocation)
-    log.info(f"re-adding key location $keyLocation")
-    addKey(keyLocation)
-    log.info(f"keyTable is: $keyTable%s")
+    // get list of source directories from production and staging
+    val allSourceDirs = (hdfs.ls("/user/logmaster/production") ++ hdfs.ls("/user/logmaster/staging"))
+      .map(fileStatus=>fileStatus.getPath.toString)
+    allSourceDirs.filter(inApprovedKeyList(_)) foreach { key=>
+      log.info(f"adding key $key")
+    jos, make the location
+      addKey(keyLocation)
+    }
 
-    // hive does not support insert into
-    //logOps.putLogKey(("production","opprouter"), partitionList)
     logOps.persistKeyTable(keyTable)
-
-    val newKeyTable = logOps.readKeyTable("/tmp/apxlog_keytable.csv")
-    log.info(f"got keytable from file: $newKeyTable%s")
   }
 
   // operator set
   //
   def hasPartitionsForKey(kt: KeyTable, k: LogKey) : Boolean = kt.contains(k)
   def partitionsForKey(kt: KeyTable, k: LogKey) : PartitionList = if (kt.contains(k)) kt(k) else new PartitionList
+  def inApprovedKeyList(path: String): Boolean = {
+    // TODO: jos !!!
+    true
+  }
 
   /**
    * add a single partition to keytable and update hive log table

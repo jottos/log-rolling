@@ -10,7 +10,6 @@ package com.apixio.service.LogRolling
 
 import scala.collection.mutable.{MutableList, ArrayBuffer, Map}
 import scala.io.Source._
-import scala.Tuple3
 import com.apixio.utils.HiveConnection
 import java.sql.SQLException
 
@@ -75,7 +74,7 @@ class LogDbOperations {
   def persistKeyTable(keyTable: KeyTable, keyTableFile: String = keyTableFile) = {
     keyTable.foreach(kte=>{
       // kte._1 -> LogKey, kte._2 -> PartitionList
-      val backUpKeyTable = f"$keyTableFile%s.bak"
+      val backUpKeyTable = f"$keyTableFile.bak"
 
       keyTableFile renameTo backUpKeyTable
 
@@ -126,11 +125,10 @@ class LogDbOperations {
    */
   def createPartitionsForKey(partitions: PartitionList) : Boolean = {
     val sqlStatements = partitions map
-      {p=> s"alter table $keyTableName add if not exists partition ${p.sqlPartitionNotation}"}
+      {p=> s"alter table $keyTableName add if not exists partition ${p.sqlPartitionNotationAndLocation}"}
     try {
       log.info("starting sql to create partitions")
       sqlStatements foreach {statement=> hiveConnection.execute(statement)}
-      //      return
       log.info("finished sql to create partitions")
       true // remove me after removing logs
     } catch {
@@ -164,107 +162,13 @@ class LogDbOperations {
       try {
         hiveConnection.execute(keyTableCreateScript)
       } catch {
+        case ex: SQLException => log.error(f"createTable: SQLException: $ex%s")
+          return false
         case ex: Exception => log.error(f"createTable: crashed out with $ex%s")
-          false
+          return false
     }
   }
 
-// JOS - deprecated, this and checkForAllTables is just here until we clean up
-type KeyMap = mutable.Map[String,mutable.MutableList[(Int,Int,Int)]]
-  /**
-   * checkForAllTables - given a list of keys for which we expect that there should be matching knownTables in hive, check
-   * the assertion that the knownTables exist in Hive and for those that do not, return a list of hive knownTables (tableNames)
-   * that should be created
-   * @param keyMap - in memory db of all partitions
-   * @param knownTables tables in the db we know of (DEPRECATED)
-   * @return
-   */
-  def checkForAllTables(keyMap: KeyMap, knownTables: Set[String]): ArrayBuffer[String] = {
-    val missingTables: ArrayBuffer[String] = ArrayBuffer()
-    keyMap.foreach(kvp=>{
-      // kvp._1 = tableName, kvp._2 MutableList[Tuple3[Int,Int,Int]]
-      if (! knownTables.contains(kvp._1))
-        missingTables :+ kvp._1
-    })
-    missingTables
-  }
-
-
-  /**
-   * DEPRECATED - THIS METHOD NO LONGER RELEVANT, may become so again if we move to MySQL or ApacheDrill for metadata
-   * Given a logKey and a list of partitions, persist this as a set of
-   * rows in the Hive backing store for the logging model
-   *
-   * @ param key
-   * @ param partitions
-   * /
-
-  def putLogKey(key: LogKey, partitions: PartitionList) = {
-    // build query
-    // TODO: jos, try doing a partition helper class for StringContext
-
-    var inserts: String = ""
-
-    // first check to make sure key is not in table, if it is
-    // ? bail or ?overwrite
-    partitions.foreach(p=>{
-      val year = p.year
-      val month = p.month
-      val monthday = p.monthDay
-      val yearday = p.yearDay
-      val location = p.location
-      val iscached = p.isCached
-
-      inserts += f"insert into $keyTableName%s values($year%s, $month%s, $monthday%s, $yearday%s, '$location%s', $iscached%s)\n"
-    })
-    try {
-      hiveConnection.execute(inserts)
-    } catch {
-      case ex: Exception => log.error(f"putLogKey: failed on inserts with $ex%s")
-    }
-    println(inserts)
-
-  }
-  */
-
-  /**
-   * checkForAllPartitions - given a keymap check that all required partitions specified in map do indeed exist
-   * return another keymap representing any missing partitions
-   * @param keyMap
-   * @return
-   */
-  /*
-  def checkForAllPartitions(keyMap: KeyMap) : KeyMap = {
-    val neededPartitionsMap: KeyMap = Map()
-    keyMap.foreach(kvp=>{
-      val neededPartitions: MutableList[PartitionTuple] = MutableList()
-      // kvp._1 = tableName, kvp._2 MutableList[Tuple3[Int,Int,Int]]
-      val existingPartitions = getTablePartitions(kvp._1)
-      kvp._2.foreach(date=>{
-        val partition: PartitionTuple = date2partitionTuple(date)
-        if (! existingPartitions.contains(partition))
-          neededPartitions :+ partition
-      })
-      neededPartitionsMap(kvp._1) = neededPartitions
-    })
-    neededPartitionsMap
-  }
-*/
-  type DateTuple = Tuple3[Int, Int, Int]
-  type PartitionTuple = Tuple3[Int, Int, Int]
-  def date2partitionTuple(date: DateTuple): PartitionTuple = {
-    val format = "yyyyMMdd"
-    val formatter: java.text.SimpleDateFormat = new java.text.SimpleDateFormat(format)
-    val year = date._1
-    val month = date._2
-    val day = date._3
-    val jdate = formatter.parse(f"20$year%s$month%s$day%s")
-    val calendar: java.util.Calendar = java.util.Calendar.getInstance()
-
-    calendar.setTime(jdate)
-    val week: Int = calendar.get(java.util.Calendar.WEEK_OF_YEAR)
-    (date._2, week, date._1)
-  }
 
 
   //
@@ -286,21 +190,6 @@ type KeyMap = mutable.Map[String,mutable.MutableList[(Int,Int,Int)]]
 
 
   /**
-   * createTable - create a partitioned table with the given name
-   * @param tableName
-   * @return
-   */
-  def createPartitionTable(tableName: String) : Boolean = {
-    try {
-      hiveConnection.execute(f"create external table if not exists $tableName like logging_master_schema_do_not_remove")
-      checkTableExists(tableName)
-    } catch {
-      case ex: Exception => log.error(f"createTable: crashed out with $ex%s")
-        return false
-    }
-  }
-
-  /**
    * hiveTables - get a list of knownTables available in hive
    * @return QueryIterator to table list - drain this into a local structure, you cannot iterate through it more than once
    */
@@ -309,31 +198,29 @@ type KeyMap = mutable.Map[String,mutable.MutableList[(Int,Int,Int)]]
   }
 
 
-  private val PartitionTableExtractor = """month=(\d{2})\/week=(\d{2})\/day=(\d{2})""".r
-
+  private val PartitionTableExtractor = """system=(production|staging)\/source=([a-zA-Z\d]+)\/year=(\d{4})\/month=(\d{2})\/day=(\d{2})\/ordinalday=(\d{2})""".r
   // TODO - this needs to be converted to new Partition case class
   /**
    * getTablePartitions - return a PartitionList for the table provided
-   * @param tableName
+   * @param tableName table to scoop up partition info for
    * @return
    */
-  def getTablePartitions(tableName: String) : MutableList[Tuple3[Int,Int,Int]] = {
-    val partitions : MutableList[Tuple3[Int,Int,Int]] = MutableList()
+  def getTablePartitions(tableName: String) : PartitionList = {
+    val partitions = new PartitionList()
     try {
       val partitionInfo = hiveConnection.fetch(f"show partitions $tableName%s")
-      partitionInfo.foreach(f=>{
-        f("partition") match {
-          case PartitionTableExtractor(month, week, day) => {
-            val t = Tuple3(month.toInt, week.toInt, day.toInt)
-            partitions += Tuple3(month.toInt, week.toInt, day.toInt)
-          }
+      partitionInfo foreach {f=>
+        f match {
+          case PartitionTableExtractor(system, source, year, month, day, ordinalday) =>
+            //jos - this has problems, the show partitions DDL does not hold location info
+            partitions += Partition(system, source, year.toInt, month.toInt, day.toInt, ordinalday.toInt, "noLocation", isCached = true)
+
           case _=> log.warn(f"getTablePartitions got crap $f%s")
         }
-      })
-    } catch {
-      case ex: Exception => {
-        log.error(f"getTablePartitions: failed getting partitions for $tableName%s")
       }
+    } catch {
+      case ex: Exception =>
+        log.error(f"getTablePartitions: failed getting partitions for $tableName")
     }
     partitions
   }
@@ -342,59 +229,102 @@ type KeyMap = mutable.Map[String,mutable.MutableList[(Int,Int,Int)]]
     try {
       val tableInfo = hiveConnection.fetch(f"describe formatted $tableName%s")
       // TODO look for col_name == Table Type with value EXTERNAL_TABLE
-      return true
+      true
     } catch {
       case ex: SQLException => return false
-      case ex: Exception => {
+      case ex: Exception =>
         log.error(f"checkHiveTable: received unexpected exception $ex%s")
         return false
-      }
     }
   }
 
 
   /**
-   * createPartition - create a new partition directory for tableName
-   * @param tableName
-   * @param location
-   * @param month
-   * @param week
-   * @param day
+   * dropPartition - drop a partition from the master table
+   * @param system - cluster that originated log, e.g. production, staging
+   * @param source - component that created log e.g. hcc or opprou
+   * @param year - the year of log
+   * @param month - the month of log
+   * @param day - the day of log
+   * @param ordinalday - the ordinal day of the log
    * @return
    */
-  def createPartition(tableName: String, location: String, month: Int, week: Int, day: Int) : Boolean = {
-    hiveConnection.execute(f"alter table $tableName%s add if not exists partition (month='$month%s', week='$week%s', day='$day%s') location '$location%s'")
+  def dropPartition(system: String, source: String, year: Int, month: Int, day: Int, ordinalday: Int) : Boolean = {
+    hiveConnection.execute(f"""alter table $keyTableName drop if exists partition
+                                 (system='$system', source='$source', month='$month%s', day='$day', ordinalday='$ordinalday)')""")
     true // returning true, because hive jdbc seems to always return false
   }
 
-  /**
-   * dropPartition - drop a directory partition from table
-   * @param tableName
-   * @param month
-   * @param week
-   * @param day
-   * @return
-   */
-  def dropPartition(tableName: String, month: Int, week: Int, day: Int) : Boolean = {
-    hiveConnection.execute(f"alter table $tableName%s drop if exists partition (month='$month%s', week='$week%s', day='$day%s')")
-    true // returning true, because hive jdbc seems to always return false
-  }
 
   val monthBases = List(0,31,59,90,120,151,181,212,243,273,304,334)
   val monthBasesLeapYear = List(0,31,60,91,121,152,182,213,244,274,305,335)
   def isLeapYear(year:Int): Boolean = if (year%100==0) year%400==0 else year%4==0
-
   /**
    * calculate the ordinal day from y/m/d
-   * @param year
-   * @param month
-   * @param day
+   * @param year - year
+   * @param month - month of year
+   * @param day - day of month
    * @return the ordinal Day
    */
   def ordinalDay(year: Int, month: Int, day: Int) : Int = {
-    return day + (if (isLeapYear(year))
+    day + (if (isLeapYear(year))
       monthBasesLeapYear(month-1)
     else
       monthBases(month-1))
   }
+
+  // alternative way to get ordinal day, but way more expensive :)
+  val format = "yyyyMMdd"
+  val formatter: java.text.SimpleDateFormat = new java.text.SimpleDateFormat(format)
+  val calendar = java.util.Calendar.getInstance()
+  def ordinalDay_wayMoreExpensive(year: Int, month: Int, day: Int): Int = {
+    calendar.setTime(formatter.parse(f"$year$month$day"))
+    calendar.get(java.util.Calendar.DAY_OF_YEAR)
+  }
+
+  // JOS - deprecated, this and checkForAllTables is just here until we clean up
+  type KeyMap = mutable.Map[String,mutable.MutableList[(Int,Int,Int)]]
+  /**
+   * checkForAllTables - given a list of keys for which we expect that there should be matching knownTables in hive, check
+   * the assertion that the knownTables exist in Hive and for those that do not, return a list of hive knownTables (tableNames)
+   * that should be created
+   * @param keyMap - in memory db of all partitions
+   * @param knownTables tables in the db we know of (DEPRECATED)
+   * @return
+   */
+  def checkForAllTables(keyMap: KeyMap, knownTables: Set[String]): ArrayBuffer[String] = {
+    val missingTables: ArrayBuffer[String] = ArrayBuffer()
+    keyMap.foreach(kvp=>{
+      // kvp._1 = tableName, kvp._2 MutableList[Tuple3[Int,Int,Int]]
+      if (! knownTables.contains(kvp._1))
+        missingTables :+ kvp._1
+    })
+    missingTables
+  }
+
+
+  /**
+   * TODO - rework this, use a pull from hdfs to cmpare with keyMap - keyMap will reflect partitions in hive or should, the paranoid function will make sure all three are consitent
+   * checkForAllPartitions - given a keymap check that all required partitions specified in map do indeed exist
+   * return another keymap representing any missing partitions
+   * @param keyMap
+   * @return
+
+  def checkForAllPartitions(keyMap: KeyMap) : KeyMap = {
+    val neededPartitionsMap: KeyMap = Map()
+    keyMap.foreach(kvp=>{
+      val neededPartitions: MutableList[PartitionTuple] = MutableList()
+      // kvp._1 = tableName, kvp._2 MutableList[Tuple3[Int,Int,Int]]
+      val existingPartitions = getTablePartitions(kvp._1)
+      kvp._2.foreach(date=>{
+        val partition: PartitionTuple = date2partitionTuple(date)
+        if (! existingPartitions.contains(partition))
+          neededPartitions :+ partition
+      })
+      neededPartitionsMap(kvp._1) = neededPartitions
+    })
+    neededPartitionsMap
+  }
+*/
+
 }

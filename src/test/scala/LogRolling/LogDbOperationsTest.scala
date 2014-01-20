@@ -34,17 +34,17 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
     hc.execute(f"drop table if exists $keyTableName%s") should be (true)
   }
 
+  // TODO - jos figure out why this fails
   "checkKeyTable" should "be able to create new keytable" in {
     logDbOps.checkKeyTable should be (true)
   }
-
+  // TODO - jos especially figure out why this fails, it's a check, it should not fail
   "checkKeyTable" should "be able to check and find keytable that already exists" in {
     logDbOps.checkKeyTable should be (true)
   }
 
-  // re-
 
-  "checkTableExits" should "be able to find production_logs_parserjob_24" in {
+  "checkTableExists" should "be able to find production_logs_parserjob_24" in {
     val cte =logDbOps.checkTableExists("production_logs_parserjob_24")
     cte should be (true)
   }
@@ -53,11 +53,12 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
 
   }
 
+// TODO: jos - this is going to fail until I create a test version of the apx_logmaster table
   "getTablePartitions" should "be able to get a list of partitions for production_logs_parserjob_epoch" in {
     logDbOps.getTablePartitions("production_logs_parserjob_epoch").length should be > 0
   }
-
-  "createPartitionTable" should "be able to create table 'jos_logs_test_table'" in {
-    logDbOps.createPartitionTable("jos_logs_test_table") should be (true)
+// TODO: jos - this should be where we use checkKeyTable to create test version of apx_logmaster
+  "createPartitionTable" should "be able to create the keyTable or verify that the keyTable exists" in {
+    logDbOps.checkKeyTable should be (true)
   }
 }
