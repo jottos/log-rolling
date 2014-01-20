@@ -1,15 +1,12 @@
-
 /**
  * Created with IntelliJ IDEA.
  * User: jos
  * Date: 11/23/13
  * Time: 9:33 AM
  */
-package com.apixio.service.LogRoller
+package com.apixio.service.LogRolling
 
-import scala.collection.mutable.Map
-import scala.collection.mutable.MutableList
-
+import scala.collection.mutable
 /**
  * Central object and control for log rolling
  */
@@ -24,25 +21,32 @@ object LogRoller {
    * @param location - path to partition excluding the scheme, host & port
    * @param isCached - is this partition data in hdfs? (changes location)
    */
-  case class Partition(year: Int, month: Int, day: Int, ordinalDay: Int, location: String, isCached: Boolean) {
-    override def toString = f"$year%s,$month%s,$day%s,$ordinalDay%s,$location%s,$isCached%s"
-    def sqlPartitionNotation = f"(year=$year, month=$month, day=$day, ordinalday=$ordinalDay,location='$location')"
+  case class Partition(system: String, source: String, year: Int, month: Int, day: Int, ordinalDay: Int, location: String, isCached: Boolean) {
+    override def toString = f"$system,$source,$year,$month,$day,$ordinalDay,$location,$isCached"
+    def sqlPartitionNotation = {
+      val fqLocation = f"hdfs://$internalHdfsHost:8020$location"
+      f"(system='$system', source='$source', year=$year, month=$month, day=$day, ordinalday=$ordinalDay) location '$fqLocation'"
+    }
   }
   // LogKey:  Tuple2[String=>clusterName, String=>metricName]
-  type LogKey = Tuple2[String, String]
-  type PartitionList = MutableList[Partition]
-  type KeyTable = Map[LogKey, PartitionList]
+  type LogKey = (String, String)
+  type PartitionList = mutable.MutableList[Partition]
+  type KeyTable = mutable.Map[LogKey, PartitionList]
   type Location = String
 
-    // extract the components of a LogKey from the top level location directory
+  // internal and external host names for HDFS
+  val internalHdfsHost = "ip-10-196-84-183.us-west-1.compute.internal"
+  val externalHdfsHost = "54.215.109.178"
+
+  // extract the components of a LogKey from the top level location directory
   val LogKeyExtractor = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
-  // extract the partition components
-  val PartitionExtractor = """.*(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2})""".r
+  // extract path, system, source, year, month, day
+  val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
 
   val log = new Logger(this.getClass.getSimpleName)
   val logOps = new LogDbOperations()
   val hdfs = new HdfsService()
-  val keyTable: KeyTable = Map(): KeyTable
+  val keyTable: KeyTable = mutable.Map(): KeyTable
   val keyLocation = "/user/logmaster/production/opprouter"
 
   def main(args: Array[String]) = {
@@ -69,8 +73,16 @@ object LogRoller {
   def hasPartitionsForKey(kt: KeyTable, k: LogKey) : Boolean = kt.contains(k)
   def partitionsForKey(kt: KeyTable, k: LogKey) : PartitionList = if (kt.contains(k)) kt(k) else new PartitionList
 
-  // add partition to keytable and flush new row to hive
-  def addPartition(kt: KeyTable, k: LogKey, p: Partition) = println("todo, addPartition")
+  /**
+   * add a single partition to keytable and update hive log table
+   * @param logKey - identification of the partitionList we are adding partition to
+   * @param partition - metadata for new partition
+   * @return
+   */
+  def addPartition(logKey: LogKey, partition: Partition) = {
+   //TODO - add partition to partition list, fail if key does not exist, add partition to logtable
+  }
+
 
   /**
    * Given location of log data, go out and determine the partitions needed, add metadata to keyTable and
@@ -81,42 +93,39 @@ object LogRoller {
    * TODO: add search though S3 log data for partitions (only doing HDFS right now)
    */
   def addKey(location: Location): Boolean = {
-    val partitionList = new MutableList[Partition]()
+    val partitionList = new mutable.MutableList[Partition]()
+    //TODO !! jos - if we have a central table and not prod and stage tables then log key is only needed to locate files in hdfs (???)
+    //TODO jos- can we get away with a case class here for the LogKey
+    val LogKeyExtractor(system, source) = location
+    val logKey = (system, source)
 
-    //jos- can we get away with a case class here for the LogKey
-    val LogKeyExtractor(cluster, key) = location
-    val logKey = (cluster, key)
-    log.info(f"addKey: location=$location")
-    if (hasPartitionsForKey(keyTable, logKey)) {
-      log.info("addKey: location already exists")
-      return true
-    }
-    val partitionDirs = hdfs.getAllDirs(location)
+    if (!hasPartitionsForKey(keyTable, logKey)) {
+      val partitionDirs = hdfs.getAllDirs(location)
 
-    log.info(s"partition dirs for $location are:\n ${partitionDirs.map(_.getPath.toString).mkString("\n")}")
-    try {
-      log.info(f"key $logKey%s not found in keytable, creating it")
-      partitionDirs.map(fileStatus => fileStatus.getPath.toString) foreach {
-        case dirName @ PartitionExtractor(cluster, key, year, month, day) => {
-          val ordinalDay = logOps.ordinalDay(year.toInt, month.toInt, day.toInt)
-          partitionList += Partition(year.toInt, month.toInt, day.toInt, ordinalDay, dirName, true)
+      try {
+        partitionDirs.map(fileStatus => fileStatus.getPath.toString) foreach {
+          case dirName@PartitionExtractor(path, _, _, year, month, day) =>
+            val ordinalDay: Int = logOps.ordinalDay(year.toInt, month.toInt, day.toInt)
+            partitionList += Partition(system, source, year.toInt, month.toInt, day.toInt, ordinalDay, path, isCached = true)
+
+          case dirName@_ => log.warn(f"Error: No match found for: $dirName")
         }
-        case dirName @ _ => log.warn(f"Error: No match found for: $dirName%s")
+        log.info(s"partitions are $location:\n ${partitionList.map(_ toString).mkString("\n")}")
+        keyTable += logKey -> partitionList
+        logOps.createPartitionsForKey(partitionList)
       }
-      log.info(s"partitions are $location:\n ${partitionList.map(_ toString).mkString("\n")}")
-      keyTable += logKey -> partitionList
-
-      logOps.createPartitionsForKey(logKey: LogKey, partitionList: PartitionList)
-
-      return true
-    } catch {
-      case ex: Exception => {
-        log.error(f"addKey why am i here?: $ex%s")
-        return false
+      catch {
+        case ex: Exception =>
+          log.error(f"addKey crapped out creating partitionList: $ex%s")
+          false
       }
+    }
+    else {
+      true
     }
   }
 
+/*
   //
   // TODO: JOS- move most of this to tests, through out the rest
 
@@ -164,14 +173,14 @@ object LogRoller {
     log.info("fetching table map")
     val TableNames = """.*(production|staging)_logs_([a-zA-Z\d]+).*""".r
     var tableMap : TableMap = Map()
-    logOps.hiveTables.foreach(f=>
+    logOps.hiveTables.foreach(f =>
       f match {
-        case TableNames(cluster, table) => {
+        case TableNames(cluster, table) =>
           val newList = if (tableMap.contains(cluster)) tableMap(cluster) ++ Set(table) else Set(table)
           tableMap += cluster -> newList
-        }
-        case _=> log.warn(f"got hive table that doesn't match: $f%s")
-    })
+
+        case _ => log.warn(f"got hive table that doesn't match: $f%s")
+      })
     log.info(f"got knownTables: $tableMap%s")
 
     log.info("checking for tables")
@@ -183,7 +192,7 @@ object LogRoller {
 //    log.info(f"missing partitions $missingPartitions")
     //val missingTables = checkForAllTables(bigKeyMap("production"), hiveTables("production"))
   }
-
+*/
 
 }
 

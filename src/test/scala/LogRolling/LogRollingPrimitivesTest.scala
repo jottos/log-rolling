@@ -1,4 +1,4 @@
-package com.apixio.service.LogRoller
+package com.apixio.service.LogRolling
 
 import org.scalatest._
 import com.apixio.utils.HiveConnection
@@ -60,4 +60,17 @@ class LogRollingPrimitivesTest extends FlatSpec with ShouldMatchers {
     month should be ("01")
     day should be ("10")
   }
+
+  "the PartitionExtractor pattern" should "be able to match Path, Cluster, Metric, Year, Month & Day groups" in {
+    val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+    val PartitionExtractor(path, cluster, source, year, month, day) = "hdfs://54.215.109.178:8020/user/logmaster/production/opprouter/2013-12-24"
+
+    path should be ("/user/logmaster/production/opprouter/2013-12-24")
+    cluster should be ("production")
+    source should be ("opprouter")
+    year should be ("2013")
+    month should be ("12")
+    day should be ("24")
+  }
+
 }

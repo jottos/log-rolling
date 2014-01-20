@@ -5,7 +5,7 @@
  * Time: 6:01 PM
  * To change this template use File | Settings | File Templates.
  */
-package com.apixio.service.LogRoller
+package com.apixio.service.LogRolling
 
 import org.scalatest._
 import com.apixio.utils.HiveConnection

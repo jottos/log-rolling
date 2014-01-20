@@ -1,6 +1,5 @@
-package LogRolling
+package com.apixio.service.LogRolling
 
-import com.apixio.service.LogRoller.HdfsService
 import org.scalatest._
 /**
  * Created by jos on 1/14/14.

@@ -32,4 +32,20 @@ val a = "a"
 val b = "b"
 println(foop.km((a,b)))
 val p = Partition(1,2,3,4,"home", true)
-println(f"interpolate an object field, partition.location: $p.location%s")
+println(f"interpolate an object field, partition.location: ${p.location}%s")
+
+
+val LocationPathExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+).*)""".r
+
+val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+
+
+val PartitionExtractor(g1, g2, g3, g4, g5, g6) = "hdfs://54.215.109.178:8020/user/logmaster/production/opprouter/2013-12-24"
+
+
+
+
+
+println(List(g1, g2, g3, g4, g5, g6))
+
+

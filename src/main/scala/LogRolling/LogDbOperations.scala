@@ -6,7 +6,7 @@
  * To change this template use File | Settings | File Templates.
  */
 
-package com.apixio.service.LogRoller
+package com.apixio.service.LogRolling
 
 import scala.collection.mutable.{MutableList, ArrayBuffer, Map}
 import scala.io.Source._
@@ -19,9 +19,6 @@ import LogRoller.KeyTable
 import LogRoller.Partition
 import java.io.{PrintWriter, File}
 import scala.collection.mutable
-
-// TODO - these imports may need to be switched to LogRollingModel later, currently we are just using an object called logRoller
-import com.apixio.service.LogRoller.LogRoller.{LogKey, KeyMap}
 
 class LogDbOperations {
   val log = new Logger(this.getClass.getSimpleName)
@@ -38,8 +35,8 @@ class LogDbOperations {
    *   "file1" renameTo "file2
    *   "file1" delete
    *
-   * @param s
-   * @return
+   * @param s - string path of file
+   * @return File for path s
    */
   implicit def file(s: String) = new File(s)
 
@@ -60,8 +57,8 @@ class LogDbOperations {
 
   /**
    * Scoop up all the lines from a file and present as an iterable
-   * @param filePath
-   * @return
+   * @param filePath - string path of file to read
+   * @return - iterator of lines from file
    */
   def getLines(filePath : String) = fromFile(filePath)("UTF-8").getLines()
 
@@ -72,20 +69,19 @@ class LogDbOperations {
    * Fields 0 & 1 are LogKey
    * Fields 2 - 7 are the partition metadata
    *
-   * @param keyTable
-   * @param keyTableFile
+   * @param keyTable - keyTable to persist
+   * @param keyTableFile - file to persist keyTable to
    */
   def persistKeyTable(keyTable: KeyTable, keyTableFile: String = keyTableFile) = {
     keyTable.foreach(kte=>{
       // kte._1 -> LogKey, kte._2 -> PartitionList
-      val cluster = kte._1._1
-      val metric =  kte._1._2
       val backUpKeyTable = f"$keyTableFile%s.bak"
 
       keyTableFile renameTo backUpKeyTable
 
       printToFile(keyTableFile) { pw=>
-        pw.println(kte._2.map(p=>s"$cluster,$metric,${p}").mkString("\n"))
+        //pw.println(kte._2.map(p=>s"$cluster,$source,${p}").mkString("\n"))
+        pw.println(kte._2.map(p=>f"$p").mkString("\n"))
       }
     })
   }
@@ -100,17 +96,17 @@ class LogDbOperations {
    */
   def readKeyTable(keyTableFile: String = keyTableFile) : KeyTable = {
     val lines = fromFile(keyTableFile: String).getLines()
-    val keyTable : KeyTable = Map()
+    val keyTable : KeyTable = mutable.Map()
 
-    lines.foreach(l=>{
+    lines.foreach { l=>
       val fields = l.split(',').map(_ trim)
       val logKey = (fields(0), fields(1))
-      val partition = Partition(fields(2).toInt, fields(3).toInt, fields(4).toInt, fields(5).toInt, fields(6), fields(7).toBoolean)
+      val partition = Partition(fields(0), fields(1), fields(2).toInt, fields(3).toInt, fields(4).toInt, fields(5).toInt, fields(6), fields(7).toBoolean)
       if (! keyTable.contains(logKey)) {
         keyTable += logKey -> new PartitionList()
       }
       keyTable(logKey) += partition
-    })
+    }
     keyTable
   }
 
@@ -124,21 +120,21 @@ class LogDbOperations {
 
   /**
    *
-   * @param logKey
-   * @param partitions
+   * @param partitions - list of partitions that need to be created in the logging table, keyTable is currently a modual
+   *                   variable because we are operating under a model of having a single logmaster table
    * @return
    */
-  def createPartitionsForKey(logKey: LogKey, partitions: PartitionList) : Boolean = {
-    val sql = partitions
-      .map(p=> s"alter table $keyTableName add if not exists partition ${p.sqlPartitionNotation};")
-      .mkString("\n")
-
+  def createPartitionsForKey(partitions: PartitionList) : Boolean = {
+    val sqlStatements = partitions map
+      {p=> s"alter table $keyTableName add if not exists partition ${p.sqlPartitionNotation}"}
     try {
-      println(sql)
-      return true
-//      return hiveConnection.execute(sql)
+      log.info("starting sql to create partitions")
+      sqlStatements foreach {statement=> hiveConnection.execute(statement)}
+      //      return
+      log.info("finished sql to create partitions")
+      true // remove me after removing logs
     } catch {
-      case ex: Exception => log.error(f"putLogKey: failed on inserts with $ex%s")
+      case ex: Exception => log.error(f"createPartitions: failed on inserts with $ex%s")
         return false
     }
   }
@@ -163,26 +159,24 @@ class LogDbOperations {
           ordinalday INT COMMENT 'the day of year the log was created'
           )
          ROW FORMAT DELIMITED LINES TERMINATED BY '\n'
-         STORED AS TEXTFILE""";
+         STORED AS TEXTFILE"""
 
       try {
         hiveConnection.execute(keyTableCreateScript)
-        log.info(f"checked/created $keyTableName%s")
-        return true
       } catch {
         case ex: Exception => log.error(f"createTable: crashed out with $ex%s")
-          return false
+          false
     }
   }
 
-
-
+// JOS - deprecated, this and checkForAllTables is just here until we clean up
+type KeyMap = mutable.Map[String,mutable.MutableList[(Int,Int,Int)]]
   /**
    * checkForAllTables - given a list of keys for which we expect that there should be matching knownTables in hive, check
    * the assertion that the knownTables exist in Hive and for those that do not, return a list of hive knownTables (tableNames)
    * that should be created
-   * @param keyMap
-   * @param knownTables
+   * @param keyMap - in memory db of all partitions
+   * @param knownTables tables in the db we know of (DEPRECATED)
    * @return
    */
   def checkForAllTables(keyMap: KeyMap, knownTables: Set[String]): ArrayBuffer[String] = {

@@ -5,7 +5,7 @@
  * Time: 11:28 AM
  * To change this template use File | Settings | File Templates.
  */
-package com.apixio.service.LogRoller
+package com.apixio.service.LogRolling
 
 import java.io.BufferedInputStream
 import java.io.File
