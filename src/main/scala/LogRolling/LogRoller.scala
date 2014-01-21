@@ -33,7 +33,7 @@ object LogRoller {
       f"(system='$system', source='$source', year=$year, month=$month, day=$day, ordinalday=$ordinalDay)"
     }
   }
-  // LogKey:  Tuple2[String=>clusterName, String=>metricName]
+  // LogKey:  Tuple2[String=>system, String=>source]
   type LogKey = (String, String)
   type PartitionList = mutable.MutableList[Partition]
   type KeyTable = mutable.Map[LogKey, PartitionList]
@@ -43,27 +43,29 @@ object LogRoller {
   val internalHdfsHost = "ip-10-196-84-183.us-west-1.compute.internal"
   val externalHdfsHost = "54.215.109.178"
 
-  // extract the components of a LogKey from the top level location directory
-  val LogKeyExtractor = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
   // extract path, system, source, year, month, day
-  val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+  val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/(\w\d\.]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+  // extract key (system,source) + path to this key
+  val KeyExtractor = """.*(\/user\/logmaster\/(production|staging)\/([\w\d\.]+))""".r
 
   val log = new Logger(this.getClass.getSimpleName)
   val logOps = new LogDbOperations()
   val hdfs = new HdfsService()
   val keyTable: KeyTable = mutable.Map(): KeyTable
-  val keyLocation = "/user/logmaster/production/opprouter"
 
   def main(args: Array[String]) = {
     log.info("this is our new main program")
 
-    // get list of source directories from production and staging
-    val allSourceDirs = (hdfs.ls("/user/logmaster/production") ++ hdfs.ls("/user/logmaster/staging"))
-      .map(fileStatus=>fileStatus.getPath.toString)
-    allSourceDirs.filter(inApprovedKeyList(_)) foreach { key=>
-      log.info(f"adding key $key")
-    jos, make the location
-      addKey(keyLocation)
+    // 1. get list of source directories from production and staging
+    // 2. filter them through a white list
+    // 3. pull out the location and add key to db for each
+    (hdfs.ls("/user/logmaster/production") ++ hdfs.ls("/user/logmaster/staging"))
+      .map(fileStatus=>fileStatus.getPath.toString).filter(inApprovedKeyList(_)) foreach {
+      case key@KeyExtractor(keyLocation, system, source) =>
+        //log.info(f"adding key $keyLocation")
+        println(f"""\"$system\"->\"$source\""")
+        //addKey(keyLocation)
+      case key@_ => log.warn(f"main loop: have log directory [$key]that does not conform to KeyExtractor")
     }
 
     logOps.persistKeyTable(keyTable)
@@ -73,8 +75,11 @@ object LogRoller {
   //
   def hasPartitionsForKey(kt: KeyTable, k: LogKey) : Boolean = kt.contains(k)
   def partitionsForKey(kt: KeyTable, k: LogKey) : PartitionList = if (kt.contains(k)) kt(k) else new PartitionList
+
+  val keyWhitelist = Set("production"->"hcc")
   def inApprovedKeyList(path: String): Boolean = {
-    // TODO: jos !!!
+    val KeyExtractor(_, system, source) = path
+    keyWhitelist.contains((system, source))
     true
   }
 
@@ -101,7 +106,7 @@ object LogRoller {
     val partitionList = new mutable.MutableList[Partition]()
     //TODO !! jos - if we have a central table and not prod and stage tables then log key is only needed to locate files in hdfs (???)
     //TODO jos- can we get away with a case class here for the LogKey
-    val LogKeyExtractor(system, source) = location
+    val KeyExtractor(path, system, source) = location
     val logKey = (system, source)
 
     if (!hasPartitionsForKey(keyTable, logKey)) {
@@ -109,7 +114,7 @@ object LogRoller {
 
       try {
         partitionDirs.map(fileStatus => fileStatus.getPath.toString) foreach {
-          case dirName@PartitionExtractor(path, _, _, year, month, day) =>
+          case dirName@PartitionExtractor(_, _, _, year, month, day) =>
             val ordinalDay: Int = logOps.ordinalDay(year.toInt, month.toInt, day.toInt)
             partitionList += Partition(system, source, year.toInt, month.toInt, day.toInt, ordinalDay, path, isCached = true)
 

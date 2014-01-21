@@ -209,14 +209,12 @@ class LogDbOperations {
     val partitions = new PartitionList()
     try {
       val partitionInfo = hiveConnection.fetch(f"show partitions $tableName%s")
-      partitionInfo foreach {f=>
-        f match {
+      partitionInfo foreach {
           case PartitionTableExtractor(system, source, year, month, day, ordinalday) =>
             //jos - this has problems, the show partitions DDL does not hold location info
             partitions += Partition(system, source, year.toInt, month.toInt, day.toInt, ordinalday.toInt, "noLocation", isCached = true)
 
-          case _=> log.warn(f"getTablePartitions got crap $f%s")
-        }
+          case f@_=> log.warn(f"getTablePartitions got crap $f%s")
       }
     } catch {
       case ex: Exception =>
