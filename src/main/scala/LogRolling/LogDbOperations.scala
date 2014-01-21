@@ -19,9 +19,35 @@ import LogRoller.Partition
 import java.io.{PrintWriter, File}
 import scala.collection.mutable
 
-class LogDbOperations {
-  val log = new Logger(this.getClass.getSimpleName)
+// helper object, publish some of the useful staticy kinds of things
+object LogDbOperations {
+  //TODO: migrate the non-instance methods here
+  /**
+   * create a printwriter from
+   * @param file - where to print to
+   * @param printingFunction  - closure passed in by caller that will print to print writer
+   * @return Unit
+   */
+  def printToFile(file: File)(printingFunction: PrintWriter => Unit) {
+    val p = new PrintWriter(file, "UTF-8")
+    try {
+      printingFunction(p)
+    } finally {
+      p.close()
+    }
+  }
+  /**
+   * Scoop up all the lines from a file and present as an iterable
+   * @param filePath - string path of file to read
+   * @return - iterator of lines from file
+   */
+  def getLines(filePath : String) = fromFile(filePath)("UTF-8").getLines()
+}
 
+class LogDbOperations {
+  import LogDbOperations.printToFile
+
+  val log = new Logger(this.getClass.getSimpleName)
   val keyTableName = "apx_logmaster"
   val keyTableFile = "/tmp/apxlog_keytable.csv"
 
@@ -39,27 +65,6 @@ class LogDbOperations {
    */
   implicit def file(s: String) = new File(s)
 
-  /**
-   * create a printwriter from
-   * @param file - where to print to
-   * @param printingFunction  - closure passed in by caller that will print to print writer
-   * @return Unit
-   */
-  def printToFile(file: File)(printingFunction: PrintWriter => Unit) {
-    val p = new PrintWriter(file, "UTF-8")
-    try {
-      printingFunction(p)
-    } finally {
-      p.close()
-    }
-  }
-
-  /**
-   * Scoop up all the lines from a file and present as an iterable
-   * @param filePath - string path of file to read
-   * @return - iterator of lines from file
-   */
-  def getLines(filePath : String) = fromFile(filePath)("UTF-8").getLines()
 
   /**
    * write keytable to disk, move current keyTable file to tmp location first if it exists, then write out new file
