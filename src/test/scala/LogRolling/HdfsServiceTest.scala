@@ -16,6 +16,10 @@ class HdfsServiceTest extends FlatSpec with ShouldMatchers {
     val dirTree = hdfsService.getAllDirs("/user/logmaster/production")
   }
 
+  "hdfsService" should "be able to get directory tree for /user/logmaster/production/opprouter" in {
+    val dirTree = hdfsService.getAllDirs("/user/logmaster/production")
+  }
+
   // copy file in
   // copy file out
   // move file inside

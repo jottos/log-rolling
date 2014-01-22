@@ -29,6 +29,19 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
     complexAnswer.size should be > 0
   }
 
+  val testTableName = "LogDbOperations_test_table"
+  "hiveConnection" should f"be able to create temp table  $testTableName" in {
+    hc.execute(f"create table if not exists $testTableName(foofield int)") should be (true)
+  }
+
+  "hiveConnection" should f"be able to drop a temp table $testTableName" in {
+    hc.execute(f"drop table if exists $testTableName") should be (true)
+  }
+
+  "hiveConnection" should f"fail if we try to drop a table that doesn't exist - foopy_doopy" in {
+    hc.execute(f"drop table foop_doopy") should be (false)
+  }
+
   "hiveConnection" should "be able to drop old keyTable" in {
     val keyTableName = logDbOps.keyTableName
     hc.execute(f"drop table if exists $keyTableName%s") should be (true)
@@ -54,8 +67,8 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
   }
 
 // TODO: jos - this is going to fail until I create a test version of the apx_logmaster table
-  "getTablePartitions" should "be able to get a list of partitions for production_logs_parserjob_epoch" in {
-    logDbOps.getTablePartitions("production_logs_parserjob_epoch").length should be > 0
+  "getTablePartitions" should "be able to get a list of partitions for apx_logmaster" in {
+    logDbOps.getTablePartitions("apx_logmaster").length should be > 0
   }
 // TODO: jos - this should be where we use checkKeyTable to create test version of apx_logmaster
   "createPartitionTable" should "be able to create the keyTable or verify that the keyTable exists" in {

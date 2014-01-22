@@ -13,9 +13,7 @@ import scala.io.Source._
 import com.apixio.utils.HiveConnection
 import java.sql.SQLException
 
-import LogRoller.PartitionList
-import LogRoller.KeyTable
-import LogRoller.Partition
+import com.apixio.service.LogRolling.LogRoller.{LogKey, PartitionList, KeyTable, Partition}
 import java.io.{PrintWriter, File}
 import scala.collection.mutable
 
@@ -42,10 +40,38 @@ object LogDbOperations {
    * @return - iterator of lines from file
    */
   def getLines(filePath : String) = fromFile(filePath)("UTF-8").getLines()
+
+  val monthBases = List(0,31,59,90,120,151,181,212,243,273,304,334)
+  val monthBasesLeapYear = List(0,31,60,91,121,152,182,213,244,274,305,335)
+  def isLeapYear(year:Int): Boolean = if (year%100==0) year%400==0 else year%4==0
+  /**
+   * calculate the ordinal day from y/m/d
+   * @param year - year
+   * @param month - month of year
+   * @param day - day of month
+   * @return the ordinal Day
+   */
+  def ordinalDay(year: Int, month: Int, day: Int) : Int = {
+    day + (if (isLeapYear(year))
+      monthBasesLeapYear(month-1)
+    else
+      monthBases(month-1))
+  }
+
+  // alternative way to get ordinal day, but way more expensive :)
+  val format = "yyyyMMdd"
+  val formatter: java.text.SimpleDateFormat = new java.text.SimpleDateFormat(format)
+  val calendar = java.util.Calendar.getInstance()
+  def ordinalDay_wayMoreExpensive(year: Int, month: Int, day: Int): Int = {
+    calendar.setTime(formatter.parse(f"$year$month$day"))
+    calendar.get(java.util.Calendar.DAY_OF_YEAR)
+  }
+
 }
 
 class LogDbOperations {
   import LogDbOperations.printToFile
+  import LogDbOperations.ordinalDay
 
   val log = new Logger(this.getClass.getSimpleName)
   val keyTableName = "apx_logmaster"
@@ -77,17 +103,15 @@ class LogDbOperations {
    * @param keyTableFile - file to persist keyTable to
    */
   def persistKeyTable(keyTable: KeyTable, keyTableFile: String = keyTableFile) = {
-    keyTable.foreach(kte=>{
-      // kte._1 -> LogKey, kte._2 -> PartitionList
-      val backUpKeyTable = f"$keyTableFile.bak"
-
-      keyTableFile renameTo backUpKeyTable
+    val backUpKeyTable = f"$keyTableFile.bak"
+    keyTableFile renameTo backUpKeyTable
 
       printToFile(keyTableFile) { pw=>
-        //pw.println(kte._2.map(p=>s"$cluster,$source,${p}").mkString("\n"))
-        pw.println(kte._2.map(p=>f"$p").mkString("\n"))
+        keyTable foreach {entry =>
+          // kte._1 -> LogKey, kte._2 -> PartitionList
+          pw.println(entry._2.map(p=>f"$p").mkString("\n"))
+        }
       }
-    })
   }
 
   /**
@@ -102,9 +126,9 @@ class LogDbOperations {
     val lines = fromFile(keyTableFile: String).getLines()
     val keyTable : KeyTable = mutable.Map()
 
-    lines.foreach { l=>
+    lines foreach { l=>
       val fields = l.split(',').map(_ trim)
-      val logKey = (fields(0), fields(1))
+      val logKey = LogKey(fields(0), fields(1))
       val partition = Partition(fields(0), fields(1), fields(2).toInt, fields(3).toInt, fields(4).toInt, fields(5).toInt, fields(6), fields(7).toBoolean)
       if (! keyTable.contains(logKey)) {
         keyTable += logKey -> new PartitionList()
@@ -165,7 +189,9 @@ class LogDbOperations {
          STORED AS TEXTFILE"""
 
       try {
-        hiveConnection.execute(keyTableCreateScript)
+        val rv = hiveConnection.execute(keyTableCreateScript)
+        log.info(f"checkKeyTable returned $rv")
+        return rv
       } catch {
         case ex: SQLException => log.error(f"createTable: SQLException: $ex%s")
           return false
@@ -259,31 +285,6 @@ class LogDbOperations {
   }
 
 
-  val monthBases = List(0,31,59,90,120,151,181,212,243,273,304,334)
-  val monthBasesLeapYear = List(0,31,60,91,121,152,182,213,244,274,305,335)
-  def isLeapYear(year:Int): Boolean = if (year%100==0) year%400==0 else year%4==0
-  /**
-   * calculate the ordinal day from y/m/d
-   * @param year - year
-   * @param month - month of year
-   * @param day - day of month
-   * @return the ordinal Day
-   */
-  def ordinalDay(year: Int, month: Int, day: Int) : Int = {
-    day + (if (isLeapYear(year))
-      monthBasesLeapYear(month-1)
-    else
-      monthBases(month-1))
-  }
-
-  // alternative way to get ordinal day, but way more expensive :)
-  val format = "yyyyMMdd"
-  val formatter: java.text.SimpleDateFormat = new java.text.SimpleDateFormat(format)
-  val calendar = java.util.Calendar.getInstance()
-  def ordinalDay_wayMoreExpensive(year: Int, month: Int, day: Int): Int = {
-    calendar.setTime(formatter.parse(f"$year$month$day"))
-    calendar.get(java.util.Calendar.DAY_OF_YEAR)
-  }
 
   // JOS - deprecated, this and checkForAllTables is just here until we clean up
   type KeyMap = mutable.Map[String,mutable.MutableList[(Int,Int,Int)]]

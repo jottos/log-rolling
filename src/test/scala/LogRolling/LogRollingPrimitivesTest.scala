@@ -13,24 +13,26 @@ import scala.collection.mutable.{MutableList, Map}
  * To change this template use File | Settings | File Templates.
  */
 class LogRollingPrimitivesTest extends FlatSpec with ShouldMatchers {
-  case class Partition(year: Int, month: Int, monthDay: Int, yearDay: Int, location: String, isCached: Boolean) {
-    override def toString = f"$year%s,$month%s,$monthDay%s,$yearDay%s,$location%s,$isCached%s"
+  import LogRoller.Partition
+  import LogRoller.KeyExtractor
+  import LogRoller.LogKey
+  import LogRoller.KeyTable
+
+
+  "a partition object we created" should "be able to match based on fields" in {
+    val p = Partition("production", "aSourceKey", 2012, 12, 1, 334, "/user/logmaster/production/fooKey", false)
+
+    p match{
+      case Partition(system, source, 2012, m, d, od, loc, cached) => println(m)
+        system should be ("production")
+        source should be ("aSourceKey")
+        m should be (12)
+        d should be (1)
+        od should be (334)
+        loc should be("/user/logmaster/production/fooKey")
+        cached should be (false)
+    }
   }
-  //TODO: tests that show that LogKeys are values and no matter how many times we construct them or from where they always are eqv? and will pull the right item from our Map()
-  type LogKey = Tuple2[String, String]
-  type KeyTable = Map[LogKey, MutableList[Partition]]
-  // example partition instance
-  val p = Partition(2012, 12, 1, 334, "/user/logmaster/production/fooKey", false)
-  val yr = p.year
-
-  val kt : KeyTable = Map()
-  kt += ("a", "b") -> MutableList(p)
-
-
-  p match{
-    case Partition(2012, m, md, yd, loc, cached) => println(m)
-  }
-
 
   "the LogKey pattern" should "be able to match Cluster and Key" in {
     val LogKey = """.*(production|staging)\/([a-zA-Z\d]+).*""".r
@@ -61,6 +63,13 @@ class LogRollingPrimitivesTest extends FlatSpec with ShouldMatchers {
     day should be ("10")
   }
 
+  "KeyExtractor" should "be able to match path, system and source from /user/logmaster/production/sourceKey" in {
+    val KeyExtractor(path, system, source) = "/user/logmaster/production/sourceKey"
+    path should be ("/user/logmaster/production/sourceKey")
+    system should be ("production")
+    source should be ("sourceKey")
+  }
+
   "PartitionFromPartitionTableExtractor" should "be able to match system,source,year,month,day,ordinalday" in {
     //val PartitionTableExtractor = """system=(production|staging)\/source=([a-zA-Z\d]+)\/year=(\d{4})\/month=(\d+)\/day=(\d{2})\/ordinalday=(\d{2})""".r
     val PartitionTableExtractor = """system=(production|staging)\/source=([a-zA-Z\d]+)\/year=(\d{4})\/month=(\d{1,2})\/day=(\d{1,2})\/ordinalday=(\d{1,2})""".r
@@ -75,15 +84,36 @@ class LogRollingPrimitivesTest extends FlatSpec with ShouldMatchers {
   }
 
   "the PartitionFromHdfsPathExtractor pattern" should "be able to match Path, Cluster, Metric, Year, Month & Day groups" in {
-    val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
-    val PartitionExtractor(path, cluster, source, year, month, day) = "hdfs://54.215.109.178:8020/user/logmaster/production/opprouter/2013-12-24"
+    val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z_\d\.]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+    val PartitionExtractor(path, cluster, source, year, month, day) = "hdfs://54.215.109.178:8020/user/logmaster/production/PatientManifest/2013-12-24"
 
-    path should be ("/user/logmaster/production/opprouter/2013-12-24")
+    path should be ("/user/logmaster/production/PatientManifest/2013-12-24")
     cluster should be ("production")
-    source should be ("opprouter")
+    source should be ("PatientManifest")
     year should be ("2013")
     month should be ("12")
     day should be ("24")
   }
 
-}
+  it should "also be able to handle funky names for sources like Patient_manifest.foopy" in {
+    val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z_\d\.]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+    val PartitionExtractor(_, _, source, _, _, _) = "hdfs://54.215.109.178:8020/user/logmaster/production/Patient_manifest.foopy/2013-12-24"
+
+    source should be ("Patient_manifest.foopy")
+  }
+
+  "the NEW PartitionFromHdfsPathExtractor pattern" should "be able to match Path, Cluster, Metric, Year, Month & Day groups" in {
+    //val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/(\w\.]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+    //l PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z_\d\.]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+    val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([\w\.]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+    val PartitionExtractor(path, cluster, source, year, month, day) = "hdfs://54.215.109.178:8020/user/logmaster/production/PatientManifest.foop_doop/2013-12-24"
+
+    path should be ("/user/logmaster/production/PatientManifest.foop_doop/2013-12-24")
+    cluster should be ("production")
+    source should be ("PatientManifest.foop_doop")
+    year should be ("2013")
+    month should be ("12")
+    day should be ("24")
+  }
+
+  }

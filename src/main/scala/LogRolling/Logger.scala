@@ -21,17 +21,17 @@ class Logger(source: String) {
 
   def error(e : String)
   {
-    Console.err.println(f"$timeStamp $source: [ERROR] $e%s")
+    Console.err.println(f"${timeStamp} $source: [ERROR] $e%s")
     Console.err.flush()
   }
   def warn(e: String)
   {
-    Console.out.println(f"$timeStamp $source: [WARN] $e%s")
+    Console.out.println(f"${timeStamp} $source: [WARN] $e%s")
     Console.out.flush()
   }
   def info(e: String)
   {
-    Console.out.println(f"$timeStamp $source: [INFO] $e%s")
+    Console.out.println(f"${timeStamp} $source: [INFO] $e%s")
     Console.out.flush()
   }
 }
