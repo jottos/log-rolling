@@ -31,11 +31,6 @@ class LogRollerTest extends FlatSpec with ShouldMatchers {
   "addKey" should f"be able to re-add key from $keyLocation%s with out any ill effects" in {
     val KeyExtractor(path, sys, src) = keyLocation
     LogRoller.addKey(sys,src,path) should be (true)
-
-//JOS - REMOVE THIS
-//    keyTable foreach {entry =>
-//      println(entry._2.map(p=>f"$p").mkString("\n"))
-//    }
   }
 
   "persistKeyTable" should "be able to write keytable to disk" in {

@@ -23,7 +23,7 @@ class HiveConnection(jdbcUrl:String, username:String, password:String, driverNam
   // TODO - really could use a batch
 
   def execute(query:String) : Boolean = {
-    //log.info(f"execute got query: $query%s")
+    log.info(f"execute got query: $query")
     val stmt = con.createStatement()
     stmt.execute(query)
   }
