@@ -67,15 +67,27 @@ object LogDbOperations {
     calendar.get(java.util.Calendar.DAY_OF_YEAR)
   }
 
+  /**
+   * hiveConnection - create and maintain access for the application HiveConnection
+   */
+  private var hiveConn : HiveConnection = null
+  def hiveConnection : HiveConnection = {
+    if (hiveConn != null)
+      hiveConn
+    else {
+      hiveConn = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
+      hiveConn
+    }
+  }
+
 }
 
-class LogDbOperations {
+class LogDbOperations(keyTableName: String, keyTableFile: String) {
   import LogDbOperations.printToFile
   import LogDbOperations.ordinalDay
+  import LogDbOperations.hiveConnection
 
   val log = new Logger(this.getClass.getSimpleName)
-  val keyTableName = "apx_logmaster"
-  val keyTableFile = "/tmp/apxlog_keytable.csv"
 
   //
   // file handling support functions
@@ -99,10 +111,11 @@ class LogDbOperations {
    * Fields 0 & 1 are LogKey
    * Fields 2 - 7 are the partition metadata
    *
+   * JOS - I hate this setup, the logDb operations need to know what the keyTable looks like - seriously leaking abstration
+   *
    * @param keyTable - keyTable to persist
-   * @param keyTableFile - file to persist keyTable to
    */
-  def persistKeyTable(keyTable: KeyTable, keyTableFile: String = keyTableFile) = {
+  def persistKeyTable(keyTable: KeyTable) = {
     val backUpKeyTable = f"$keyTableFile.bak"
     keyTableFile renameTo backUpKeyTable
 
@@ -119,10 +132,11 @@ class LogDbOperations {
    * Fields 0 & 1 are LogKey
    * Fields 2 - 7 are the partition metadata
    *
-   * @param keyTableFile  path to file that contains keyTable
+   * JOS - I hate this setup, the logDb operations need to know what the keyTable looks like - seriously leaking abstration
+   *
    * @return a KeyTable contained in file
    */
-  def readKeyTable(keyTableFile: String = keyTableFile) : KeyTable = {
+  def readKeyTable : KeyTable = {
     val lines = fromFile(keyTableFile: String).getLines()
     val keyTable : KeyTable = mutable.Map()
 
@@ -140,9 +154,6 @@ class LogDbOperations {
 
 /*
   f"alter table $tableName%s add if not exists partition (year='$year%s', month='$month%s', monthday='$monthday', yearday='$yearday') location '$location%s';"
-
-  f"create external table if not exists $tableName%s like logging_master_schema_do_not_remove"
-
   f"alter table $tableName%s drop if exists partition (year='$year%s', month='$month%s', monthday='$monthday', yearday='$yearday');"
 */
 
@@ -206,18 +217,6 @@ class LogDbOperations {
   // HIVE
   //
 
-  /**
-   * hiveConnection - create and maintain access for the application HiveConnection
-   */
-  private var hiveConn : HiveConnection = null
-  def hiveConnection : HiveConnection = {
-    if (hiveConn != null)
-      hiveConn
-    else {
-      hiveConn = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
-      hiveConn
-    }
-  }
 
 
   /**
@@ -228,9 +227,8 @@ class LogDbOperations {
     hiveConnection.fetch("show tables").map(f=>f("tab_name").toString).toList
   }
 
-
-  private val PartitionTableExtractor = """system=(production|staging)\/source=([a-zA-Z\d]+)\/year=(\d{4})\/month=(\d{2})\/day=(\d{2})\/ordinalday=(\d{2})""".r
-  // TODO - this needs to be converted to new Partition case class
+  val PartitionTableExtractor = """system=(production|staging)\/source=([\w\.]+)\/year=(\d{4})\/month=(\d{1,2})\/day=(\d{1,2})\/ordinalday=(\d{1,2})""".r
+  //val PartitionTableExtractor = """system=(production|staging)\/source=([a-zA-Z\d]+)\/year=(\d{4})\/month=(\d{2})\/day=(\d{2})\/ordinalday=(\d{2})""".r
   /**
    * getTablePartitions - return a PartitionList for the table provided
    * @param tableName table to scoop up partition info for
@@ -240,12 +238,13 @@ class LogDbOperations {
     val partitions = new PartitionList()
     try {
       val partitionInfo = hiveConnection.fetch(f"show partitions $tableName%s")
-      partitionInfo foreach {
-          case PartitionTableExtractor(system, source, year, month, day, ordinalday) =>
-            //jos - this has problems, the show partitions DDL does not hold location info
-            partitions += Partition(system, source, year.toInt, month.toInt, day.toInt, ordinalday.toInt, "noLocation", isCached = true)
+      // TODO - jos, the jdbc return is an List of Map[String, Any], let's type def this
+      partitionInfo.map(row=>row("partition")) foreach {
+        case PartitionTableExtractor(system, source, year, month, day, ordinalday) =>
+          //TODO jos - this has problems, the show partitions DDL does not hold location info
+          partitions += Partition(system, source, year.toInt, month.toInt, day.toInt, ordinalday.toInt, "noLocation", isCached = true)
 
-          case f@_=> log.warn(f"getTablePartitions got crap $f%s")
+        case partitionString@_=> log.warn(f"getTablePartitions got crap $partitionString")
       }
     } catch {
       case ex: Exception =>

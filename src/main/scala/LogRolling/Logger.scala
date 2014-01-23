@@ -15,8 +15,8 @@ class Logger(source: String) {
   val cal = Calendar.getInstance()
   val dateFormatter = new SimpleDateFormat("[yyyy-MM-dd'T'HH:mm:ss.S]");
 
-  private def timeStamp: String = {
-    dateFormatter.format(cal.getTime())
+  def timeStamp: String = {
+    dateFormatter.format(Calendar.getInstance.getTime)
   }
 
   def error(e : String)

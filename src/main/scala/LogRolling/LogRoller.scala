@@ -15,9 +15,6 @@ import LogDbOperations.ordinalDay
  * Central object and control for log rolling
  */
 object LogRoller {
-
-  case class LogKey(system: String, source: String)
-
   /**
    * Partition Metadata
    * @param year - gregorian year
@@ -37,8 +34,14 @@ object LogRoller {
       f"(system='$system', source='$source', year=$year, month=$month, day=$day, ordinalday=$ordinalDay)"
     }
   }
-  // LogKey:  Tuple2[String=>system, String=>source]
-  //type LogKey = (String, String)
+
+  /**
+   * the key to the keyTable
+   * @param system production | staging
+   * @param source the component doing the logging e.g. hcc, opprouter...
+   */
+  case class LogKey(system: String, source: String)
+
   type PartitionList = mutable.MutableList[Partition]
   type KeyTable = mutable.Map[LogKey, PartitionList]
   type Location = String
@@ -54,11 +57,23 @@ object LogRoller {
   // extract path, system, source
   val KeyExtractor = """.*(\/user\/logmaster\/(production|staging)\/([\w\.]+))""".r
 
+  val apxLogtableName = "apx_logmaster"
+  val apxDbName = "/tmp/apxlog_keytable.csv"
+
   val log = new Logger(this.getClass.getSimpleName)
-  val logOps = new LogDbOperations()
+  var logOps = new LogDbOperations("apx_logmaster", "/tmp/apxlog_keytable.csv")
   val hdfs = new HdfsService()
   val keyTable: KeyTable = mutable.Map(): KeyTable
 
+  /**
+   * reset the logOps object, really only used for testing right now which forces
+   * us to usr a var for logOps and not a val
+   * @param tableName
+   * @param dbName
+   */
+  def setApxLogmasterName(tableName: String, dbName: String) {
+    logOps = new LogDbOperations(tableName, dbName)
+  }
 
   def main(args: Array[String]) = {
     log.info("this is our new main program")
@@ -103,7 +118,7 @@ object LogRoller {
 
           case dirName@_ => log.warn(f"addKey: No match found for: $dirName, ignoring.")
         }
-        log.info(s"partitions are $location:\n ${partitionList.map(_ toString).mkString("\n")}")
+        //log.info(s"partitions are $location:\n ${partitionList.map(_ toString).mkString("\n")}")
         keyTable += logKey -> partitionList
         logOps.createPartitionsForKey(partitionList)
       }

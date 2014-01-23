@@ -12,7 +12,10 @@ import com.apixio.utils.HiveConnection
 
 class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
   val hc = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
-  val logDbOps = new LogDbOperations()
+  val keyTableName = "apx_logmaster_test"
+  val keyTableFile =  "/tmp/apxlog_keytable_test.csv"
+  val logDbOps = new LogDbOperations(keyTableName, keyTableFile)
+
   "hiveConnection" should "be able to show tables" in {
     val tableList = hc.fetch("show tables")
     tableList.size should be > 0
@@ -43,7 +46,6 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
   }
 
   "hiveConnection" should "be able to drop old keyTable" in {
-    val keyTableName = logDbOps.keyTableName
     hc.execute(f"drop table if exists $keyTableName%s") should be (true)
   }
 
