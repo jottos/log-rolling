@@ -25,6 +25,7 @@ km += k -> "first val"
 import com.apixio.service.LogRolling.Logger
 val logger = new Logger("playTypes_script")
 
+
 println("got logger timestamp")
 println(logger.timeStamp)
 
@@ -36,7 +37,9 @@ logger.info("I want to see the time change")
 
 
 
+
 logger.warn("I want to see the time change")
+
 
 
 
@@ -62,7 +65,9 @@ println(f"interpolate an object field, partition.location: ${p.location}%s")
 val LocationPathExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+).*)""".r
 
 
+
 val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
+
 
 
 
@@ -77,13 +82,29 @@ val PartitionExtractor(g1, g2, g3, g4, g5, g6) = "hdfs://54.215.109.178:8020/use
 
 
 
+
+
+
+
+
 println(List(g1, g2, g3, g4, g5, g6))
+
 
 
 def getLines(fpath:String) = fromFile(fpath)("UTF-8").getLines()
 val li = getLines("/tmp/apxlog_key_whitelist.csv")
 println(li)
 val ll = li.toList
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -128,7 +149,27 @@ val lll = ll.map(line=>line.split(',')) collect { case Array(system,source)=>(sy
 
 
 
+
+
+
+
+
+
+
+
+
+
 val s = Set(lll:_*)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -170,7 +211,27 @@ val s2 = lll.toSet
 
 
 
+
+
+
+
+
+
+
+
+
+
 val s3 = Set(getLines("/tmp/apxlog_key_whitelist.csv").toList.map(line=>line.split(',')) collect { case Array(system,source)=>(system, source)}:_*)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -205,18 +266,22 @@ val s4 = getLines("/tmp/apxlog_key_whitelist.csv").map(line=>line.split(',') mat
 
 
 
+
+
+
+
+
+
+
+
+
+
 // create table logdboperation_test_table ( foo int);
 import com.apixio.service.LogRolling.LogDbOperations.hiveConnection
 val testTableName = "apx_log_foo_test"
 hiveConnection.execute(f"create table if not exists $testTableName(foofield int)")
-println("got logger timestamp")
-println(logger.timeStamp)
 
-logger.info("has the time changed?")
 
-logger.warn("has the time changed?")
-
-logger.error("has the time changed?")
 
 
 

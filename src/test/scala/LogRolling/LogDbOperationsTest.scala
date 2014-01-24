@@ -11,6 +11,7 @@ import org.scalatest._
 import com.apixio.utils.HiveConnection
 
 class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
+  val logger = new Logger("logdboperationstest")
   val hc = new HiveConnection("jdbc:hive2://184.169.209.24:10000/default", "hive", "")
   val keyTableName = "apx_logmaster_test"
   val keyTableFile =  "/tmp/apxlog_keytable_test.csv"
@@ -34,11 +35,40 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
 
   val testTableName = "LogDbOperations_test_table"
   "hiveConnection" should f"be able to create temp table  $testTableName" in {
-    hc.execute(f"create table if not exists $testTableName(foofield int)") should be (true)
+    hc.execute(f"create table if not exists $testTableName(foofield int)")
+    val res = hc.execute(f"describe $testTableName")
+    logger.info(f"result of describe table $testTableName is $res")
+    if (res == true)
+      logger.info("res == true")
+    else
+      logger.info(f"res class ${res.getClass.getSimpleName}")
+
+    res should be (true)
+
+    //val res2 = hc.execute(f"describe table_does_not_exist")
+    //logger.info(f"result of describe table table does not exist is $res2")
+  }
+
+  "hiveConnection" should f"be able to describe $testTableName" in {
+    //hc.execute(f"drop table if exists $testTableName") should be (true)
+    val res = hc.fetch(f"drop table if exists $testTableName")
+    if (res == true)
+      logger.info("res == true")
+    else
+      logger.info(f"res class ${res.getClass.getSimpleName}")
+    logger.info(f"$testTableName described is $res")
+
+    res should not be (null)
   }
 
   "hiveConnection" should f"be able to drop a temp table $testTableName" in {
-    hc.execute(f"drop table if exists $testTableName") should be (true)
+    //hc.execute(f"drop table if exists $testTableName") should be (true)
+    val res = hc.execute(f"drop table if exists $testTableName")
+    if (res == true)
+      logger.info("res == true")
+    else
+      logger.info(f"res class ${res.getClass.getSimpleName}")
+    res should be (true)
   }
 
   "hiveConnection" should f"fail if we try to drop a table that doesn't exist - foopy_doopy" in {

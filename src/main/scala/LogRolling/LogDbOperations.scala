@@ -178,7 +178,6 @@ class LogDbOperations(keyTableName: String, keyTableFile: String) {
   }
 
 
-
   /**
    * create the logmaster keyTable if it does not exist
    * @return
@@ -212,13 +211,6 @@ class LogDbOperations(keyTableName: String, keyTableFile: String) {
   }
 
 
-
-  //
-  // HIVE
-  //
-
-
-
   /**
    * hiveTables - get a list of knownTables available in hive
    * @return QueryIterator to table list - drain this into a local structure, you cannot iterate through it more than once
@@ -227,7 +219,7 @@ class LogDbOperations(keyTableName: String, keyTableFile: String) {
     hiveConnection.fetch("show tables").map(f=>f("tab_name").toString).toList
   }
 
-  val PartitionTableExtractor = """system=(production|staging)\/source=([\w\.]+)\/year=(\d{4})\/month=(\d{1,2})\/day=(\d{1,2})\/ordinalday=(\d{1,2})""".r
+  val PartitionTableExtractor = """system=(production|staging)\/source=([\w\.]+)\/year=(\d{4})\/month=(\d{1,2})\/day=(\d{1,2})\/ordinalday=(\d{1,3})""".r
   //val PartitionTableExtractor = """system=(production|staging)\/source=([a-zA-Z\d]+)\/year=(\d{4})\/month=(\d{2})\/day=(\d{2})\/ordinalday=(\d{2})""".r
   /**
    * getTablePartitions - return a PartitionList for the table provided
