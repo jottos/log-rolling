@@ -9,6 +9,7 @@ package com.apixio.service.LogRolling
 
 import org.scalatest._
 import com.apixio.utils.HiveConnection
+import java.sql.SQLException
 
 class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
   val logger = new Logger("logdboperationstest")
@@ -33,17 +34,29 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
     complexAnswer.size should be > 0
   }
 
-  val testTableName = "LogDbOperations_test_table"
+  val testTableName = "logdboperations_test_table"
   "hiveConnection" should f"be able to create temp table  $testTableName" in {
     hc.execute(f"create table if not exists $testTableName(foofield int)")
-    val res = hc.execute(f"describe $testTableName")
+    logger.info("did create table..., now fetching")
+    try {
+    val res = hc.fetch(f"describe $testTableName")
     logger.info(f"result of describe table $testTableName is $res")
     if (res == true)
       logger.info("res == true")
     else
       logger.info(f"res class ${res.getClass.getSimpleName}")
 
-    res should be (true)
+    logger.info(f"results set size = ${res.size}")
+    res.foreach({r=>
+      logger.info(f"r=${r.toString}")
+    })
+    res should not be (null)
+    } catch {
+      case ex:SQLException => logger.error(f"sql fail for describe $testTableName")
+      1 should not be (2)
+    }
+
+
 
     //val res2 = hc.execute(f"describe table_does_not_exist")
     //logger.info(f"result of describe table table does not exist is $res2")
@@ -52,8 +65,8 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
   "hiveConnection" should f"be able to describe $testTableName" in {
     //hc.execute(f"drop table if exists $testTableName") should be (true)
     val res = hc.fetch(f"drop table if exists $testTableName")
-    if (res == true)
-      logger.info("res == true")
+    if (res != null)
+      logger.info("res != null")
     else
       logger.info(f"res class ${res.getClass.getSimpleName}")
     logger.info(f"$testTableName described is $res")

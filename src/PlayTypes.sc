@@ -25,30 +25,6 @@ km += k -> "first val"
 import com.apixio.service.LogRolling.Logger
 val logger = new Logger("playTypes_script")
 
-
-println("got logger timestamp")
-println(logger.timeStamp)
-
-
-logger.info("I want to see the time change")
-
-
-
-
-
-
-
-logger.warn("I want to see the time change")
-
-
-
-
-
-
-
-logger.error("I want to see the time change")
-
-
 // tests to see if tuples are interned, we add a LogKey
 // ("a","b") and then we use all methods of creating new
 // versions of such to pull from the map - so either tuples
@@ -66,19 +42,13 @@ val LocationPathExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-z
 
 
 
+
 val PartitionExtractor = """.*(\/user\/logmaster\/(production|staging)\/([a-zA-Z\d]+)\/(\d{4})-(\d{2})-(\d{2}))""".r
 
 
 
 
 val PartitionExtractor(g1, g2, g3, g4, g5, g6) = "hdfs://54.215.109.178:8020/user/logmaster/production/opprouter/2013-12-24"
-
-
-
-
-
-
-
 
 
 
@@ -118,22 +88,7 @@ val ll = li.toList
 
 
 
-
-
-
-
-
-
-
 val lll = ll.map(line=>line.split(',')) collect { case Array(system,source)=>(system, source)}
-
-
-
-
-
-
-
-
 
 
 
@@ -186,18 +141,7 @@ val s = Set(lll:_*)
 
 
 
-
-
-
-
 val s2 = lll.toSet
-
-
-
-
-
-
-
 
 
 
@@ -246,13 +190,16 @@ val s3 = Set(getLines("/tmp/apxlog_key_whitelist.csv").toList.map(line=>line.spl
 
 
 
-
-
-
-
-
-
 val s4 = getLines("/tmp/apxlog_key_whitelist.csv").map(line=>line.split(',') match {case Array(system,source)=>(system, source)}).toSet
+
+
+
+
+
+
+
+
+
 
 
 
@@ -280,6 +227,59 @@ val s4 = getLines("/tmp/apxlog_key_whitelist.csv").map(line=>line.split(',') mat
 import com.apixio.service.LogRolling.LogDbOperations.hiveConnection
 val testTableName = "apx_log_foo_test"
 hiveConnection.execute(f"create table if not exists $testTableName(foofield int)")
+val res = hiveConnection.fetch(f"describe $testTableName")
+
+logger.info(f"results set size = ${res.size}")
+res.foreach({r=>
+  logger.info(f"r=${r.toString}")
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
