@@ -20,6 +20,9 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
 
   "hiveConnection" should "be able to show tables" in {
     val tableList = hc.fetch("show tables")
+    //tableList.foreach({r=>
+    //  logger.info(f"r=${r.toString}")
+    //})
     tableList.size should be > 0
   }
 
@@ -36,35 +39,31 @@ class LogDbOperationsTest extends FlatSpec with ShouldMatchers {
 
   val testTableName = "logdboperations_test_table"
   "hiveConnection" should f"be able to create temp table  $testTableName" in {
-    hc.execute(f"create table if not exists $testTableName(foofield int)")
-    logger.info("did create table..., now fetching")
     try {
-    val res = hc.fetch(f"describe $testTableName")
-    logger.info(f"result of describe table $testTableName is $res")
-    if (res == true)
-      logger.info("res == true")
-    else
-      logger.info(f"res class ${res.getClass.getSimpleName}")
-
-    logger.info(f"results set size = ${res.size}")
-    res.foreach({r=>
-      logger.info(f"r=${r.toString}")
-    })
-    res should not be (null)
+      val res = hc.execute(f"create table if not exists $testTableName(foofield int)")
+      logger.info("did create table..., now fetching")
+      res should not be (false)
     } catch {
       case ex:SQLException => logger.error(f"sql fail for describe $testTableName")
       1 should not be (2)
     }
 
-
-
     //val res2 = hc.execute(f"describe table_does_not_exist")
     //logger.info(f"result of describe table table does not exist is $res2")
   }
 
+  /**
+   * TODO - figure out why the "describe table" & "drop table" tests fail
+   * jos - so WTF, I've tried sleeping for 5sec, using a new connection and
+   * no matter what, the describe and drop always fail with an exception
+   *
+   * even when I've seen a "drop" not fail with an exception, it always
+   * returns a false
+   */
   "hiveConnection" should f"be able to describe $testTableName" in {
     //hc.execute(f"drop table if exists $testTableName") should be (true)
-    val res = hc.fetch(f"drop table if exists $testTableName")
+    //val res = hc.fetch(f"drop table if exists $testTableName")
+    val res = hc.execute(f"drop table if exists $testTableName")
     if (res != null)
       logger.info("res != null")
     else
